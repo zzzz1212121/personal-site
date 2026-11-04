@@ -41,6 +41,16 @@ SRC_DATE="$(date -r "$SRC" '+%Y-%m-%d')"
 mkdir -p "$(dirname "$DEST")"
 cp "$SRC" "$DEST" || fail "复制到站点目录失败"
 
+# 仓库体积守卫：每次记录体积，超过阈值告警/停止（Pages 站点上限 1GB）
+SIZE_KB="$(curl -s -m 20 https://api.github.com/repos/zzzz1212121/personal-site \
+  | tr ',' '\n' | grep '"size"' | head -1 | grep -o '[0-9]\+')"
+echo "[$(date '+%F %T')] repo_size=${SIZE_KB:-未知} KB   heatmap_size=$(du -k "$DEST" | cut -f1) KB" >>"$LOG"
+if [ -n "${SIZE_KB:-}" ] && [ "$SIZE_KB" -ge 800000 ]; then
+  fail "仓库体积 ${SIZE_KB}KB 已超 800MB，停止自动发布，需重建 gh-pages 历史"
+elif [ -n "${SIZE_KB:-}" ] && [ "$SIZE_KB" -ge 300000 ]; then
+  notify_once "⚠️ 网站仓库已达 $((SIZE_KB/1024))MB，接近上限，建议近期清理历史"
+fi
+
 cd "$SITE" || fail "进不去站点目录"
 export PATH="/opt/homebrew/bin:$PATH"
 bash deploy.sh >>"$LOG" 2>&1 || fail "构建或推送失败（详见 ${LOG}）"
