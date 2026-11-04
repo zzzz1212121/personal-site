@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>摄影技能树 · 进度跟踪</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2b313d;
+    --fg:#e8ecf3; --muted:#8b95a7; --accent:#5aa9ff;
+    --s0:#3a4150; --s1:#e0a33e; --s2:#2fa96b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:32px 28px 80px;
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  h1{font-size:22px; margin:0 0 4px; letter-spacing:.5px}
+  .sub{color:var(--muted); font-size:13px; margin-bottom:20px}
+  .sub b{color:var(--fg); font-weight:600}
+
+  .toolbar{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:rgba(15,17,21,.92); backdrop-filter:blur(8px);
+    padding:12px 0 14px; border-bottom:1px solid var(--line); margin-bottom:22px;
+  }
+  .bar{flex:1 1 260px; height:8px; background:var(--panel2); border-radius:99px; overflow:hidden; min-width:180px}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,#2fa96b,#5aa9ff); transition:width .25s}
+  .count{font-variant-numeric:tabular-nums; color:var(--muted)}
+  .count b{color:var(--fg)}
+  button{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px;
+  }
+  button:hover{border-color:var(--accent); color:var(--accent)}
+  .legend{display:flex; gap:14px; color:var(--muted); font-size:12px; flex-wrap:wrap}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle}
+
+  .tree{position:relative; padding-left:0}
+  .tree::before{
+    content:""; position:absolute; left:9px; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(180deg,var(--accent),#2fa96b,var(--line));
+    opacity:.5;
+  }
+  .layer{position:relative; padding-left:44px; margin-bottom:26px}
+  .layer::before{
+    content:""; position:absolute; left:10px; top:22px; width:26px; height:2px; background:var(--line);
+  }
+  .layer::after{
+    content:""; position:absolute; left:4px; top:16px; width:12px; height:12px; border-radius:50%;
+    background:var(--panel); border:2px solid var(--accent);
+  }
+  .lhead{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px}
+  .lcode{font-weight:700; color:var(--accent); font-size:15px; letter-spacing:.5px}
+  .lname{font-weight:600; font-size:16px}
+  .lgoal{color:var(--muted); font-size:12.5px}
+  .gate{
+    font-size:12.5px; color:var(--muted); margin:2px 0 12px;
+    border-left:2px solid var(--s2); padding-left:10px;
+  }
+  .gate b{color:var(--s2); font-weight:600}
+  .nodes{display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+  .node{
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--s0);
+    border-radius:10px; padding:10px 12px; cursor:pointer; user-select:none;
+    transition:transform .12s, border-color .12s, background .12s;
+  }
+  .node:hover{transform:translateY(-1px); background:var(--panel2)}
+  .node .id{font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.6px}
+  .node .t{font-weight:600; font-size:13.5px; display:block; margin:1px 0 3px}
+  .node .d{font-size:12px; color:var(--muted); line-height:1.5}
+  .node .st{font-size:11px; margin-top:7px; color:var(--muted)}
+  .node.s1{border-left-color:var(--s1)} .node.s1 .st{color:var(--s1)}
+  .node.s2{border-left-color:var(--s2); background:#141d19} .node.s2 .st{color:var(--s2)}
+  .node.s2 .t{color:#bfe6d2}
+
+  section{margin-top:38px}
+  h2{font-size:16px; margin:0 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+  table{border-collapse:collapse; width:100%; font-size:13px}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{color:var(--muted); font-weight:600; font-size:12px}
+  td:first-child{white-space:nowrap; color:var(--fg)}
+  .dep{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; color:#b9c4d4;
+    white-space:pre; overflow-x:auto; line-height:1.7;
+  }
+  .foot{color:var(--muted); font-size:12px; margin-top:28px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<h1>摄影技能树 · 进度跟踪</h1>
+<div class="sub">
+  点卡片切换状态：<b>未开始 → 学习中 → 已掌握</b>。进度存在浏览器本地（localStorage），换浏览器不同步。
+  节点定义、出关标准、坑与 12 周路径见 <b>摄影技能树.md</b>。
+</div>
+
+<div class="toolbar">
+  <span class="count">已掌握 <b id="c2">0</b> / 学习中 <b id="c1">0</b> / 共 <b id="ct">0</b></span>
+  <div class="bar"><i id="pbar"></i></div>
+  <span class="legend">
+    <span><i class="dot" style="background:var(--s0)"></i>未开始</span>
+    <span><i class="dot" style="background:var(--s1)"></i>学习中</span>
+    <span><i class="dot" style="background:var(--s2)"></i>已掌握</span>
+  </span>
+  <button id="dumpbtn">复制盘点结果</button>
+  <button id="reset">重置全部</button>
+</div>
+<pre id="dump" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:#b9c4d4;white-space:pre-wrap;margin:0 0 18px"></pre>
+
+<div class="tree" id="tree"></div>
+
+<section>
+  <h2>远期线激活机制：试拍日</h2>
+  <div class="gate" style="margin-bottom:12px">想拍 ≠ 会拍。风光/星空的真实门槛不是技术，是<b>成本</b>：凌晨出门、开车 1-2 小时、天气容错率低、通宵。所以别问「想不想」，用<b>一次真实出片</b>决定。</div>
+  <table>
+    <tr><th>结果</th><th>处置</th></tr>
+    <tr><td>愿意再安排第二次</td><td>远期线<b style="color:var(--s2)">升级为副线</b>，风光/星空技能正式排入路径</td></tr>
+    <tr><td>拍完觉得「够了、不想再来」</td><td>降级为观察列表，只读图，不再规划</td></tr>
+    <tr><td>想去但连续两次没去成</td><td>这条线是幻想 → 写进「不做清单」，停止投入注意力</td></tr>
+  </table>
+
+  <h2 style="margin-top:28px">时间窗（2026-10-01 复核）</h2>
+  <table>
+    <tr><th>题材</th><th>窗口</th><th>说明</th></tr>
+    <tr><td>银河核心</td><td><b style="color:var(--s1)">2026 只剩 10/8-12</b>；之后到 2027 年 3 月</td><td>北半球银河季 3-10 月；10 月是末班车，核心在日落后西南低空，窗口仅 1-2 小时，全年最难的一档</td></tr>
+    <tr><td>星轨 / 星野</td><td><b style="color:var(--s2)">全年可拍</b>，秋冬晴夜更好</td><td>不依赖银河核心 → 这才是星空线的第一个可练项</td></tr>
+    <tr><td>大风光</td><td>秋冬反而是旺季</td><td>通透度好、云/雾/雪/秋色，黄金时段与蓝调都成立</td></tr>
+  </table>
+  <div class="gate" style="margin-top:14px"><b>关键建议：</b>别把第一次星空试拍放在 10/8-12——那是全年最难的一档，首次大概率失败，你会错误地得出「我不是拍星空的料」。正确顺序：2026 年 11-12 月先做 2-3 次星野/星轨试拍（不挑银河季），验证「你愿不愿意半夜出门」；2027 年 3 月后再排真正的银河拍摄；第一步就没去成 → 星空线降级，别再买镜头。</div>
+</section>
+
+<section>
+  <h2>依赖关系</h2>
+  <table>
+    <tr><th>层</th><th>前置依赖</th><th>建议时机</th></tr>
+    <tr><td>L0 操作</td><td>无（起点）</td><td>第 1-2 周</td></tr>
+    <tr><td>L1 曝光与画质</td><td>依赖 L0</td><td>第 3-5 周</td></tr>
+    <tr><td>L2 视觉</td><td>无硬依赖，可与 L1 并行</td><td>第 3 周起</td></tr>
+    <tr><td>L3 题材</td><td>必须在 L1 + L2 打底之后</td><td>第 10 周起</td></tr>
+    <tr><td>L4 后期与输出</td><td>无依赖，别等「拍好了再学」</td><td>第 3 周起并行</td></tr>
+    <tr><td>L5 循环</td><td>全程；读图与反馈从第 1 周启动</td><td>全程</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>常见坑（按踩中概率排序）</h2>
+  <table>
+    <tr><th>坑</th><th>症状</th><th>解法</th></tr>
+    <tr><td>器材升级幻觉</td><td>拍不好 → 觉得镜头不行 → 买了还是拍不好</td><td>想买器材前，先用现有器材拍 100 张同一主题</td></tr>
+    <tr><td>预设/滤镜依赖</td><td>直出很丑，全靠预设救</td><td>预设掩盖的是拍摄问题（光、色温、构图）</td></tr>
+    <tr><td>无主题扫街</td><td>拍了两年没有一组作品</td><td>强制项目化：一个主题拍 3 个月</td></tr>
+    <tr><td>只看教程不动手</td><td>收藏 300 个视频，出片 0 张</td><td>输入:输出 ≤ 1:3</td></tr>
+    <tr><td>不做图库管理</td><td>照片散落各处，找不回</td><td>第一周就建导入/评级/备份流程</td></tr>
+    <tr><td>题材全都要</td><td>人像风光街拍静物都学，全不精</td><td>L3 只选 1-2 条，其余标"了解即可"</td></tr>
+    <tr><td>忽视输出</td><td>片子只躺在硬盘里</td><td>每月一次公开输出，换一次真实反馈</td></tr>
+  </table>
+</section>
+
+<div class="foot">生成于 2026-10-01 · 配套文档：<a href="摄影技能树.md">摄影技能树.md</a></div>
+
+<script>
+const DATA = [
+  { code:"L0", name:"操作层", goal:"让相机变成手的延伸（熟练度，非知识）",
+    gate:"全程 M 档连续拍一周（每天 ≥10 张），能对每张讲出为什么选这组参数",
+    nodes:[
+      ["A1","曝光三要素","光圈/快门/ISO 各自的副作用：景深、运动模糊、噪点；等量曝光互换"],
+      ["A2","测光与曝光补偿","相机假设世界是 18% 灰，会骗你；白加黑减"],
+      ["A3","对焦系统","单次/连续对焦、单点/区域/追焦、背键对焦、暗光失效边界"],
+      ["A4","拍摄模式与自定义","M/A/S 何时用；自定义按钮与快速菜单，减少进菜单次数"],
+      ["A5","文件与色彩","RAW vs JPEG 的可修复空间差一个量级；白平衡；sRGB vs AdobeRGB"],
+      ["A6","镜头语言","焦距与透视压缩、景深三变量、最大光圈 ≠ 最佳光圈"],
+      ["A7","稳定","安全快门、防抖边界、持机姿势、三脚架与快门线"],
+    ]},
+  { code:"L1", name:"曝光与画质控制", goal:"从「拍到了」到「拍得准」",
+    gate:"任意场景一次成功率 > 70%；能判断一张图是否过曝/欠曝以及还能救回多少",
+    nodes:[
+      ["B1","直方图判读","只看直方图判断曝光，不靠屏幕亮度"],
+      ["B2","向右曝光与宽容度","欠曝救得回、过曝救不回；ETTR 的收益与代价"],
+      ["B3","动态范围与 HDR","优先级：补光 > 等光 > 再构图 > 包围曝光，HDR 是最后手段"],
+      ["B4","滤镜","CPL 唯一后期难替代；ND 用于长曝；GND 多半已被包围曝光替代"],
+      ["B5","高感与降噪","噪声 vs 细节的取舍；双原生 ISO 概念（了解即可）"],
+    ]},
+  { code:"L2", name:"视觉层（核心）", goal:"决定照片「好不好」，也是最难自学的一层",
+    gate:"① 看任意照片能说出光线方向 + 光质；② 同一场景给出 3 种构图并解释取舍",
+    nodes:[
+      ["C1","光线","光位（顺/侧/逆/顶/底）、光质（硬软 = 光源相对大小）、光比"],
+      ["C2","时间选择","黄金时段/蓝调/正午硬光/阴天柔光——什么时候出门是最大的免费杠杆"],
+      ["C3","构图","三分/居中/引导线/框架/重复与打破/负空间/视觉重量"],
+      ["C4","层次与减法","前景-主体-背景、遮挡与纵深；构图首先是删掉干扰"],
+      ["C5","色彩","色相/明度/饱和度、冷暖对比；白平衡当作表达而不是「正确」"],
+      ["C6","叙事","单张的信息顺序；组图的节奏与留白"],
+      ["C7","观察力训练","同一场景拍出 20 种解法——动作技能，只能练不能读"],
+    ]},
+  { code:"T", name:"技法专项（与 L2 并行）", goal:"「用时间换物理极限」的一族多帧技法——想玩就玩，但先分清哪些在散步场景真用得上",
+    gate:"能用包围曝光合成一张大光比片子；能说出焦点堆栈为什么在手持散步场景基本没用",
+    nodes:[
+      ["T0","多帧合成族（概念）","分段采集 → 对齐 → 合成。共同前提：主体静止 + 机位不动；只有包围曝光能容忍手持"],
+      ["T1","包围曝光 + HDR 合成","单帧动态范围不够时用。散步场景<b>唯一高频可用</b>的技法（逆光街景、窗内窗外）"],
+      ["T2","焦点堆栈（景深合成）","近景远景同时清晰。散步用不上，<b>远期线（大风光）必修</b>。需脚架 + 静止主体"],
+      ["T3","长曝堆栈","单帧长曝噪点高或不够长时用：星轨、丝滑水面、人流消除。<b>星空线第一个可练项（星轨全年可拍）</b>"],
+      ["T4","全景接片（pano）","单张视角不够宽。散步时想拍宽阔街景/室内，手持也能拍"],
+      ["T5","像素位移 / 超高分辨率","单帧分辨率与色彩不足。需脚架 + 完全静止，<b>了解即可</b>"],
+      ["T6","间隔拍摄 / 延时","把散步的 20 分钟压成 10 秒。记录生活最实用的动态载体"],
+    ]},
+  { code:"L3", name:"题材纵深", goal:"主线 日常街头纪实（70%）+ 副线 家庭生活记录（30%）+ 远期线 大风光/星空（不排期，用试拍日决定升格）",
+    gate:"主线完成一个主题项目 = 30 张成片，至少 5 张敢给陌生人看并接受批评。远期线必须先通过试拍日，副线每季度可替换、不可累加",
+    nodes:[
+      ["D1","人像（观察）","焦段与距离、沟通与姿态引导、眼神光、肤色、闪光灯入门"],
+      ["D2","大风光（远期线）","机位与天气判断、前景、黄金/蓝调时段、长曝、接片、焦点堆栈"],
+      ["D3","街头/日常纪实（主线）","预判、隐蔽、决定性瞬间、不打扰、伦理边界；散步场景的主战场"],
+      ["D4","静物/产品（观察）","单灯 + 反光板起步、背景控制、质感表达"],
+      ["D5","家庭/生活记录（副线）","抓拍与情绪、不打扰、长期项目；在家/周末补练习量"],
+      ["D6","其他（了解即可）","微距/生态/建筑/运动：有明确需求再进"],
+      ["D7","星空（远期线）","银河核心/星野/星轨、光污染与暗夜选址、月相与天气窗口、堆栈降噪、赤道仪（了解）"],
+    ]},
+  { code:"L4", name:"后期与输出", goal:"从「文件夹」到「作品」",
+    gate:"固定流程，10 分钟内处理完一天的拍摄量",
+    nodes:[
+      ["E1","RAW 工作流","白平衡→曝光→高光阴影→对比曲线→局部→锐化降噪→导出，顺序错会返工"],
+      ["E2","色彩管理","显示器校准、色卡、导出嵌入色彩空间——不校准等于用别人的标准调色"],
+      ["E3","图库管理","命名/评级/关键词/多重备份。不做这步，两年后 5 万张照片就是垃圾场"],
+      ["E4","输出","输出尺寸与输出锐化、水印、打印（ICC、纸白、冲印店沟通）"],
+      ["E5","修图伦理","纪实不改内容、人像磨皮尺度、AI 生成标注"],
+    ]},
+  { code:"L5", name:"循环层", goal:"决定你能不能持续进步",
+    gate:"连续 3 个月不断更的拍摄记录 + 至少一次被有效点评并改掉的缺陷",
+    nodes:[
+      ["F1","读图","每周精读 20 张（拆光线/构图/为什么有效），比看教程有用"],
+      ["F2","反馈闭环","比你强的人点评 > 影赛 > 点赞数。没有外部反馈，3 个月内必然停住"],
+      ["F3","项目化","「一个主题拍 3 个月」远胜「随手拍 3 年」"],
+      ["F4","器材纪律","先定题材再买镜头；镜头 > 机身；买前先问「是器材问题吗」"],
+      ["F5","法律与伦理","肖像权、商用授权、无人机法规、隐私边界"],
+    ]},
+];
+
+const KEY = "photo-skill-tree-v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e) { state = {}; }
+
+const tree = document.getElementById("tree");
+const allIds = [];
+
+DATA.forEach(layer => {
+  const sec = document.createElement("div");
+  sec.className = "layer";
+  const head = document.createElement("div");
+  head.className = "lhead";
+  head.innerHTML = `<span class="lcode">${layer.code}</span><span class="lname">${layer.name}</span><span class="lgoal">${layer.goal}</span>`;
+  const gate = document.createElement("div");
+  gate.className = "gate";
+  gate.innerHTML = `<b>出关标准：</b>${layer.gate}`;
+  const grid = document.createElement("div");
+  grid.className = "nodes";
+  layer.nodes.forEach(([id,t,d]) => {
+    allIds.push(id);
+    const el = document.createElement("div");
+    el.className = "node";
+    el.dataset.id = id;
+    el.innerHTML = `<div class="id">${id}</div><span class="t">${t}</span><div class="d">${d}</div><div class="st"></div>`;
+    el.addEventListener("click", () => {
+      state[id] = ((state[id] || 0) + 1) % 3;
+      render();
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    });
+    grid.appendChild(el);
+  });
+  sec.append(head, gate, grid);
+  tree.appendChild(sec);
+});
+
+function render(){
+  let c0=0,c1=0,c2=0;
+  document.querySelectorAll(".node").forEach(el=>{
+    const s = state[el.dataset.id] || 0;
+    el.classList.remove("s1","s2");
+    if(s===1){el.classList.add("s1"); c1++;}
+    if(s===2){el.classList.add("s2"); c2++;}
+    if(s===0){c0++;}
+    el.querySelector(".st").textContent = s===0 ? "○ 未开始" : s===1 ? "◐ 学习中" : "● 已掌握";
+  });
+  document.getElementById("c1").textContent = c1;
+  document.getElementById("c2").textContent = c2;
+  document.getElementById("ct").textContent = allIds.length;
+  document.getElementById("pbar").style.width = (c2/allIds.length*100).toFixed(1) + "%";
+}
+
+document.getElementById("dumpbtn").addEventListener("click", () => {
+  const mastered = allIds.filter(id => state[id] === 2);
+  const learning = allIds.filter(id => state[id] === 1);
+  const todo = allIds.filter(id => !state[id]);
+  const txt =
+    "【摄影技能树盘点 " + new Date().toLocaleDateString("zh-CN") + "】\n" +
+    "共 " + allIds.length + " 节点 —— 已掌握 " + mastered.length + " / 学习中 " + learning.length + " / 未开始 " + todo.length + "\n\n" +
+    "已掌握：" + (mastered.join(" ") || "—") + "\n" +
+    "学习中：" + (learning.join(" ") || "—") + "\n" +
+    "未开始：" + (todo.join(" ") || "—") + "\n";
+  const box = document.getElementById("dump");
+  box.style.display = "block";
+  box.textContent = txt;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(
+      () => { box.textContent = "✅ 已复制到剪贴板，直接贴给我即可。\n\n" + txt; },
+      () => { box.textContent = "⚠️ 自动复制被浏览器拦截（file:// 常见）——手动全选下面这段贴给我：\n\n" + txt; }
+    );
+  } else {
+    box.textContent = "⚠️ 浏览器不支持自动复制——手动全选下面这段贴给我：\n\n" + txt;
+  }
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  if(!confirm("重置全部节点状态？此操作不可撤销。")) return;
+  state = {};
+  try { localStorage.setItem(KEY, "{}"); } catch(e){}
+  render();
+});
+
+render();
+</script>
+<div style="position:fixed;left:16px;bottom:16px;z-index:20">
+  <a href="/" style="display:inline-block;padding:8px 14px;border-radius:10px;background:rgba(30,34,43,.94);border:1px solid #2b313d;color:#8b95a7;text-decoration:none;font-size:13px">← 蓝海小站</a>
+</div>
+</body>
+</html>
