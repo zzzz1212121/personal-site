@@ -1,0 +1,23 @@
+{{ define "main" }}
+
+<div class="hero">
+  <h1>{{ .Title }}</h1>
+  {{ with .Content }}<div class="list-intro">{{ . }}</div>{{ end }}
+</div>
+
+<section>
+  <ul class="list">
+    {{ range .Pages }}
+    <li>
+      <a href="{{ .RelPermalink }}">
+        <div class="item-title">{{ .Title }}</div>
+        <div class="item-meta">{{ .Date.Format "2006-01-02" }}</div>
+      </a>
+    </li>
+    {{ else }}
+    <li><div class="item-meta">还没有文章。</div></li>
+    {{ end }}
+  </ul>
+</section>
+
+{{ end }}

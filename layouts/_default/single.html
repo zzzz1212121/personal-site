@@ -1,0 +1,10 @@
+{{ define "main" }}
+
+<article>
+  <h1>{{ .Title }}</h1>
+  <div class="article-meta">{{ .Date.Format "2006-01-02" }} · 约 {{ .ReadingTime }} 分钟</div>
+  {{ .Content }}
+  <a class="back" href="{{ "/" | relURL }}">← 返回文章列表</a>
+</article>
+
+{{ end }}

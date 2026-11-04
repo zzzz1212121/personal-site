@@ -1,0 +1,22 @@
+baseURL = "https://ztsblueocean.cn/"
+languageCode = "zh-cn"
+defaultContentLanguage = "zh-cn"
+title = "ztsblueocean"
+enableRobotsTXT = true
+
+# 不生成标签/分类页（暂时用不上）
+disableKinds = ["taxonomy", "term"]
+
+[params]
+  brand = "ztsblueocean"
+  tagline = "拍点照片，写点东西。"
+  description = "个人存档：照片、影像、技术笔记。"
+  footer = "用 Hugo 生成 · 托管在 GitHub Pages"
+
+[markup]
+  [markup.highlight]
+    noClasses = true
+    style = "github"
+
+[outputs]
+  home = ["HTML", "RSS"]

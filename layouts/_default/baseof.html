@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="{{ site.Language.Locale | default "zh-cn" }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if .IsHome }}{{ site.Params.brand }}{{ else }}{{ .Title }} · {{ site.Params.brand }}{{ end }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
+  <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+  {{ with .OutputFormats.Get "rss" }}
+  <link rel="alternate" type="application/rss+xml" href="{{ .Permalink }}" title="{{ site.Params.brand }}">
+  {{ end }}
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="brand"><a href="{{ "/" | relURL }}">{{ site.Params.brand }}</a></div>
+    <nav class="nav-links">
+      <a href="{{ "/" | relURL }}">文章</a>
+      <a href="{{ "/about/" | relURL }}">关于</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {{ block "main" . }}{{ end }}
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>© {{ now.Format "2006" }} {{ site.Params.brand }} · {{ site.Params.footer }}</p>
+  </div>
+</footer>
+
+</body>
+</html>
