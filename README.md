@@ -28,6 +28,7 @@ hugo.toml                 站点配置（baseURL / 站名 / 参数）
 content/posts/            文章（Markdown）
 content/about.md          关于页
 layouts/                  模板：baseof / index / list / single / robots.txt
+layouts/partials/gate.html 进站欢迎界面「叫哥才给进」（自动注入所有页面）
 static/css/style.css      样式
 static/CNAME              自定义域名（Hugo 原样拷到 public/）
 static/heatmap/index.html 每日板块热力图（自动写入，勿手改）
@@ -69,3 +70,21 @@ sector-dashboard/output/strategy_heatmap.html
 - 本机直连 `github.com` 网页被拦（`api.github.com` 和 SSH 正常）。**改仓库设置需要开代理**；`git push` 走 SSH，不需要代理。
 - brew 安装必须带 `HOMEBREW_NO_AUTO_UPDATE=1`，否则卡在 auto-update。
 - 写得快的命令：`dig +short ztsblueocean.cn` 验解析；`openssl s_client -connect ztsblueocean.cn:443 -servername ztsblueocean.cn | openssl x509 -noout -subject` 验证书。
+
+## 进站欢迎界面（2026-11-04 加）
+
+首次访问（或新开标签页）会先看到一屏欢迎界面，**必须喊一声「哥」才放行**。
+
+| 项 | 说明 |
+|---|---|
+| 位置 | `layouts/partials/gate.html`，由 `baseof.html` 注入所有页面 |
+| 通过规则 | 输入内容**包含「哥」**即通过（哥 / 大哥 / 老哥 / 哥好 都行） |
+| 记忆范围 | `sessionStorage` —— **同一次会话内不再弹**，关掉浏览器再开又会拦一次 |
+| 错误反馈 | 输入框抖动 + 随机吐槽（"再来一次，好好叫。"等） |
+| 无 JS | `<noscript>` 兜底自动隐藏，不挡真实用户与搜索引擎 |
+| 覆盖范围 | 只拦 Hugo 生成的页面；`/heatmap/` 是 static 裸页，**不在拦截范围** |
+
+样式在 `static/css/style.css` 末尾「进站口令」段，沿用站点 CSS 变量（支持深色模式）。
+
+**想改口令**：编辑 `gate.html` 里的 `var OK = ['哥'];`（数组里任一子串命中即通过）。
+**想临时关掉**：删掉 `baseof.html` 里那行 `{{ partial "gate.html" . }}` 再发布。
