@@ -154,3 +154,86 @@ footer {
   .hero h1 { font-size: 23px; }
   article h1 { font-size: 22px; }
 }
+
+/* ===== 进站口令：叫哥才给进 ===== */
+html.gate-locked { overflow: hidden; }
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  transition: opacity 0.34s ease, visibility 0.34s;
+}
+.gate.is-open { opacity: 0; visibility: hidden; }
+
+.gate-inner { width: 100%; max-width: 380px; text-align: center; }
+
+.gate-brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.gate-en {
+  margin-top: 3px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gate-rule { width: 36px; height: 1px; background: var(--line); margin: 26px auto; }
+
+.gate-title { margin: 0; font-size: 26px; line-height: 1.3; letter-spacing: -0.02em; }
+.gate-sub { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+
+.gate-form { display: flex; gap: 8px; margin: 26px 0 0; }
+
+.gate-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.gate-input::placeholder { color: var(--muted); }
+.gate-input:focus { border-color: var(--accent); background: var(--bg); }
+
+.gate-btn {
+  flex: 0 0 auto;
+  padding: 10px 20px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.gate-btn:hover { opacity: 0.86; }
+.gate-btn:active { transform: translateY(1px); }
+
+.gate-hint { min-height: 20px; margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+
+@keyframes gate-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.gate.is-shake .gate-form { animation: gate-shake 0.32s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gate { transition: none; }
+  .gate-input, .gate-btn { transition: none; }
+  .gate.is-shake .gate-form { animation: none; }
+}

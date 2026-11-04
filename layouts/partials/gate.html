@@ -1,0 +1,81 @@
+{{- /*
+  欢迎界面 / 进站口令：叫哥才给进
+  · 首次访问（或新开标签页）显示，通过后存 sessionStorage，同一次会话内不再出现
+  · 输入里含「哥」即通过（哥 / 大哥 / 老哥 / 哥好 都行）
+  · 无 JS 时自动不拦截（noscript 兜底）
+*/ -}}
+<div id="gate" class="gate">
+  <div class="gate-inner">
+    <div class="gate-brand">{{ site.Params.brand }}</div>
+    <div class="gate-en">{{ site.Params.brandEn }}</div>
+
+    <div class="gate-rule"></div>
+
+    <h2 class="gate-title">叫哥才给进</h2>
+    <p class="gate-sub">喊一声就行。</p>
+
+    <form id="gate-form" class="gate-form" autocomplete="off" novalidate>
+      <input id="gate-input" class="gate-input" type="text"
+             placeholder="在此输入…" aria-label="输入通关口令"
+             maxlength="12" autocapitalize="off" spellcheck="false">
+      <button id="gate-btn" class="gate-btn" type="submit">进</button>
+    </form>
+
+    <p id="gate-hint" class="gate-hint" role="status" aria-live="polite"></p>
+  </div>
+</div>
+<noscript><style>#gate{display:none!important}</style></noscript>
+<script>
+(function () {
+  var KEY = 'blueocean:gate';
+  var gate = document.getElementById('gate');
+  if (!gate) return;
+
+  // 本次会话已通过 → 不显示
+  try {
+    if (sessionStorage.getItem(KEY) === '1') { gate.remove(); return; }
+  } catch (e) { /* 隐私模式下忽略 */ }
+
+  document.documentElement.classList.add('gate-locked');
+
+  var form  = document.getElementById('gate-form');
+  var input = document.getElementById('gate-input');
+  var hint  = document.getElementById('gate-hint');
+
+  var OK  = ['哥'];
+  var NAG = [
+    '叫得不够诚心。',
+    '这不算叫哥。',
+    '再来一次，好好叫。',
+    '门口站着的也是哥。'
+  ];
+
+  setTimeout(function () { try { input.focus({ preventScroll: true }); } catch (e) {} }, 60);
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var v = (input.value || '').trim();
+
+    if (!v) { hint.textContent = '连句哥都不叫？'; nope(); return; }
+
+    var pass = OK.some(function (k) { return v.indexOf(k) !== -1; });
+    if (pass) {
+      try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+      hint.textContent = '请进。';
+      gate.classList.add('is-open');
+      document.documentElement.classList.remove('gate-locked');
+      setTimeout(function () { gate.remove(); }, 360);
+    } else {
+      hint.textContent = NAG[Math.floor(Math.random() * NAG.length)];
+      nope();
+    }
+  });
+
+  function nope() {
+    gate.classList.remove('is-shake');
+    void gate.offsetWidth;          // 重排，让动画能重复触发
+    gate.classList.add('is-shake');
+    input.select();
+  }
+})();
+</script>

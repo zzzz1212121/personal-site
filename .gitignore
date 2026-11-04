@@ -11,3 +11,6 @@ resources/_gen/
 
 # Hugo 运行时锁文件
 .hugo_build.lock
+
+# 欢迎界面预览截图
+.gate-preview/
