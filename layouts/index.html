@@ -6,6 +6,18 @@
 </div>
 
 <section>
+  <h2 class="section-title"><span>工具</span></h2>
+  <ul class="list">
+    <li>
+      <a href="{{ "/heatmap/" | relURL }}">
+        <div class="item-title">板块策略仪表盘</div>
+        <div class="item-meta">每个交易日 15:45 自动更新 · MA60 买卖信号</div>
+      </a>
+    </li>
+  </ul>
+</section>
+
+<section>
   <h2 class="section-title"><span>文章</span></h2>
   <ul class="list">
     {{ range where site.RegularPages "Section" "posts" }}

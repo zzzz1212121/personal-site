@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /heatmap/
+
+Sitemap: {{ "sitemap.xml" | absURL }}
