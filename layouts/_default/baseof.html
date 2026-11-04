@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ if .IsHome }}{{ site.Params.brand }}{{ else }}{{ .Title }} · {{ site.Params.brand }}{{ end }}</title>
+  <title>{{ if .IsHome }}{{ site.Params.brand }} · {{ site.Params.brandEn }}{{ else }}{{ .Title }} · {{ site.Params.brand }}{{ end }}</title>
   <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
   <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
   {{ with .OutputFormats.Get "rss" }}
@@ -14,7 +14,7 @@
 
 <header>
   <div class="wrap nav">
-    <div class="brand"><a href="{{ "/" | relURL }}">{{ site.Params.brand }}</a></div>
+    <div class="brand"><a href="{{ "/" | relURL }}">{{ site.Params.brand }}</a><span class="brand-en">{{ site.Params.brandEn }}</span></div>
     <nav class="nav-links">
       <a href="{{ "/" | relURL }}">文章</a>
       <a href="{{ "/about/" | relURL }}">关于</a>
@@ -28,7 +28,7 @@
 
 <footer>
   <div class="wrap">
-    <p>© {{ now.Format "2006" }} {{ site.Params.brand }} · {{ site.Params.footer }}</p>
+    <p>© {{ now.Format "2006" }} {{ site.Params.brand }} · {{ site.Params.brandEn }} · {{ site.Params.footer }}</p>
   </div>
 </footer>
 

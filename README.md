@@ -1,6 +1,12 @@
-# personal-site — 个人网站
+# 蓝海小站（Blue Ocean）— 个人网站
 
 Hugo 静态站，托管 GitHub Pages + 自定义域名（不备案、无服务器，只花域名钱）。
+
+| 名称 | 值 |
+|---|---|
+| 中文名 | 蓝海小站 |
+| 英文名 | Blue Ocean |
+| 域名 | ztsblueocean.cn（域名里的 "blue ocean" 即站名来源） |
 
 ## 现状
 
