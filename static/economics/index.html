@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>宏观经济学知识树</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: #f6f6f3;
+    color: #1f2328;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 20;
+    padding: 20px 32px 16px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e3e2de;
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: flex-end; justify-content: space-between;
+  }
+  .head-left { min-width: 260px; }
+  h1 { margin: 0; font-size: 19px; letter-spacing: .4px; font-weight: 650; }
+  .sub { margin-top: 3px; font-size: 12.5px; color: #78808a; }
+  .prog-wrap { margin-top: 11px; display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; max-width: 340px; height: 6px; background: #e8e7e2; border-radius: 99px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: #2f5d50; transition: width .35s ease; }
+  .stat { font-size: 12px; color: #5c646e; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .search { position: relative; }
+  .search input {
+    width: 330px; padding: 9px 30px 9px 12px;
+    border: 1px solid #dbdad5; border-radius: 8px;
+    background: #fff; font-size: 13.5px; color: inherit; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { border-color: #2f5d50; box-shadow: 0 0 0 3px rgba(47,93,80,.1); }
+  .search .hint { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #a8adb5; pointer-events: none; }
+
+  main { display: grid; grid-template-columns: 250px minmax(0,1fr); align-items: start; }
+
+  aside {
+    position: sticky; top: 0; align-self: start;
+    max-height: 100vh; overflow: auto;
+    padding: 22px 18px 60px;
+    border-right: 1px solid #e6e5e0;
+    background: #fbfbf9;
+  }
+  .side-title { font-size: 11px; letter-spacing: 1.2px; color: #99a0a8; text-transform: uppercase; margin: 0 0 8px 4px; }
+  .side-title:not(:first-child) { margin-top: 22px; }
+  .navbtn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 6px 8px; margin-bottom: 1px;
+    border: 0; background: transparent; border-radius: 6px;
+    font: inherit; font-size: 13px; color: #3c434b; text-align: left; cursor: pointer;
+  }
+  .navbtn:hover { background: #eeede8; }
+  .navbtn .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c, #888); flex: none; }
+  .toolrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tool {
+    padding: 5px 9px; font-size: 12px; color: #4b535c;
+    border: 1px solid #ddddd7; background: #fff; border-radius: 6px; cursor: pointer;
+    font-family: inherit;
+  }
+  .tool:hover { border-color: #b9b8b1; color: #1f2328; }
+  .legend { font-size: 12px; color: #6b737c; display: grid; gap: 5px; padding-left: 4px; }
+  .legend span b { font-weight: 600; }
+  .tip { font-size: 11.5px; color: #8b929a; line-height: 1.7; padding-left: 4px; margin: 0; }
+
+  .content { padding: 26px 40px 100px; max-width: 1020px; }
+
+  .node { }
+  .node.lv1 { scroll-margin-top: 132px; }
+  .node > .row {
+    display: flex; align-items: flex-start; gap: 2px;
+    padding: 4px 8px; border-radius: 6px; cursor: pointer;
+    user-select: none;
+  }
+  .node > .row:hover { background: #efeee9; }
+  .caret {
+    width: 16px; flex: none; font-size: 11px; color: #8e959d;
+    transform-origin: 50% 55%; transition: transform .16s ease;
+    line-height: 21px; text-align: center;
+  }
+  .node > .row:hover > .caret { color: #4f5760; }
+  .node.open > .row > .caret, .node.force-open > .row > .caret { transform: rotate(90deg); color: #6d747c; }
+  .chk {
+    width: 14px; height: 14px; flex: none; margin: 4px 6px 0 1px;
+    border: 1.5px solid #cfcec8; border-radius: 4px; background: #fff;
+    position: relative; transition: background .12s, border-color .12s;
+  }
+  .node.leaf.checked > .row > .chk { background: var(--c, #3b6fb6); border-color: var(--c, #3b6fb6); }
+  .node.leaf.checked > .row > .chk::after {
+    content: ""; position: absolute; left: 4px; top: 1px;
+    width: 3px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(42deg);
+  }
+  .node.leaf.checked > .row .tx { color: #9aa1a9; }
+  .node.branch > .row > .chk { border: 0; background: transparent; }
+
+  .label { min-width: 0; }
+  .t { font-size: 14px; color: #262b31; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .d { font-size: 12.5px; color: #7b838c; margin-top: 1px; line-height: 1.55; }
+
+  .node.lv1 > .row { padding: 7px 8px; margin-top: 12px; }
+  .node.lv1 > .row .t { font-size: 15.5px; font-weight: 650; letter-spacing: .2px; }
+  .node.lv1 > .row .tx::before {
+    content: ""; display: inline-block; width: 3px; height: 14px;
+    background: var(--c, #888); border-radius: 2px; margin-right: 8px;
+    vertical-align: -2px;
+  }
+  .node.lv1 > .row .caret { line-height: 24px; }
+  .node.lv2 > .row .t { font-weight: 600; color: #2f353c; font-size: 14.2px; }
+
+  .children { display: none; margin-left: 10px; padding-left: 15px; border-left: 1px dashed #dddcd6; }
+  .node.open > .children, .node.force-open > .children { display: block; }
+  .node.lv1 > .children { margin-left: 18px; }
+
+  .tag {
+    font-size: 10.5px; font-weight: 400; line-height: 16px;
+    padding: 0 5px; border-radius: 4px; letter-spacing: 0;
+  }
+  .tag-基 { background: #e9f0ea; color: #3f7a58; }
+  .tag-核 { background: #fceee0; color: #ad6529; }
+  .tag-进 { background: #eeebf8; color: #67539f; }
+
+  .hidden { display: none !important; }
+  mark { background: #ffe6a3; color: inherit; border-radius: 2px; padding: 0 1px; }
+  body.searching .node.leaf.checked > .row .tx { color: #262b31; }
+
+  .threads { margin-top: 54px; border-top: 1px solid #e2e1dc; padding-top: 26px; }
+  .threads h2 { font-size: 15px; margin: 0 0 4px; font-weight: 650; }
+  .threads .lead { font-size: 12.5px; color: #7b838c; margin: 0 0 16px; }
+  .thread { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px dashed #e4e3de; }
+  .thread:last-child { border-bottom: 0; }
+  .thread .k {
+    flex: none; width: 72px; font-size: 13px; font-weight: 600; color: #2f5d50;
+  }
+  .thread .v { font-size: 13px; color: #4d545c; }
+  .thread .v em { font-style: normal; color: #9298a0; }
+
+  @media (max-width: 880px) {
+    main { grid-template-columns: 1fr; }
+    aside { position: static; max-height: none; height: auto; border-right: 0; border-bottom: 1px solid #e6e5e0; padding-bottom: 22px; }
+    .content { padding: 20px 18px 80px; }
+    header { padding: 16px 18px 14px; }
+    .search input { width: 100%; }
+    .search { width: 100%; }
+  }
+  @media print {
+    aside, .search, .toolrow { display: none; }
+    header { position: static; }
+    .children { display: block !important; }
+    .node > .row { cursor: default; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-left">
+    <h1>宏观经济学知识树</h1>
+    <div class="sub">9 条主干 · 把「概念 → 模型 → 数据 → 政策」串成一张网</div>
+    <div class="prog-wrap">
+      <div class="bar"><i id="bar"></i></div>
+      <div class="stat" id="stat">0 / 0</div>
+    </div>
+  </div>
+  <div class="search">
+    <input id="q" type="search" placeholder="搜索概念，如 泰勒规则、社融" autocomplete="off">
+    <span class="hint">/</span>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <p class="side-title">主干导航</p>
+    <div id="nav"></div>
+
+    <p class="side-title">操作</p>
+    <div class="toolrow">
+      <button class="tool" id="expandAll">全部展开</button>
+      <button class="tool" id="collapseAll">全部收起</button>
+      <button class="tool" id="reset">重置进度</button>
+    </div>
+
+    <p class="side-title">标记</p>
+    <div class="legend">
+      <span><span class="tag tag-基">基</span> 入门必懂</span>
+      <span><span class="tag tag-核">核</span> 核心模型与机制</span>
+      <span><span class="tag tag-进">进</span> 进阶 / 专题</span>
+    </div>
+
+    <p class="side-title">怎么用</p>
+    <p class="tip">
+      点击行为展开下一层；叶子节点可打勾，进度存在本机浏览器里。<br><br>
+      建议顺序：A → B → D → C → E → F → G → I → H。先建立「核算—波动—政策」闭环，再补增长与开放经济，最后读思想史，避免一上来就陷入学派争论。
+    </p>
+  </aside>
+
+  <section class="content">
+    <div id="tree"></div>
+
+    <section class="threads">
+      <h2>横向线索：把树连成网</h2>
+      <p class="lead">宏观理解真正靠的是纵向节点之间的横向连接。以下 6 条线各自穿过多个分支，学完一次主干就回来串一遍。</p>
+
+      <div class="thread"><div class="k">利率</div><div class="v">B 的 IS-LM 决定短期均衡 → D 的货币政策传导与泰勒规则 → E 的利率平价约束汇率 → F 的利率决定债务可持续性 <em>·同一个变量在四个分支里扮演四种角色</em></div></div>
+      <div class="thread"><div class="k">预期</div><div class="v">B 的菲利普斯曲线与卢卡斯批判 → D 的前瞻指引与政策信誉 → F 的资产价格与明斯基时刻 → I 的通胀预期数据 <em>·预期是模型通向现实的接口</em></div></div>
+      <div class="thread"><div class="k">杠杆</div><div class="v">A 的资金流量表与部门杠杆率 → F 的资产负债表衰退与去杠杆 → G 的地方债与城投 → D 的宏观审慎 <em>·中国宏观的第一性问题往往在资产负债表上</em></div></div>
+      <div class="thread"><div class="k">汇率</div><div class="v">E 的购买力平价与利率平价 → D 的三元悖论 → G 的汇率管理与资本账户 → F 的货币危机 <em>·汇率制度选择本质是政策约束的选择</em></div></div>
+      <div class="thread"><div class="k">传导</div><div class="v">D 的财政乘数与信贷渠道 → F 的金融加速器 → G 的「宽货币到宽信用」 <em>·判断政策效果，看的是传导链条断在哪一环</em></div></div>
+      <div class="thread"><div class="k">房地产</div><div class="v">B 的投资与财富效应 → F 的房地产周期 → G 的土地财政与居民资产负债表 → A 的资金流量表 <em>·中国版的「金融周期」几乎就是房地产周期</em></div></div>
+    </section>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var COLORS = ["#3b6fb6", "#c1592f", "#3f8f5f", "#7a5bb5", "#2f8f96", "#b64a76", "#b07d24", "#4a5aa8", "#7c8a2f"];
+  var LS = "macro-tree-progress-v1";
+
+  var TREE = [
+    { t: "A 核算与度量", tag: "基", d: "一切分析的地基：先把数字的口径搞清楚", c: [
+      { t: "国民收入核算", c: [
+        { t: "GDP 三种算法：支出法、收入法、生产法", d: "支出法恒等式 Y = C + I + G + NX，是所有短期模型的起点" },
+        { t: "GNP / GNI、NDP 与国民收入" },
+        { t: "名义 GDP 与实际 GDP" },
+        { t: "GDP 平减指数", d: "覆盖全部产出的价格指数，比 CPI 更全面" },
+        { t: "潜在产出与产出缺口", d: "实际减潜在；判断通胀压力与政策松紧的核心变量" },
+        { t: "人均 GDP 与购买力平价（PPP）口径" }
+      ]},
+      { t: "价格与通胀", c: [
+        { t: "CPI、PPI 与核心通胀" },
+        { t: "同比、环比与翘尾因素" },
+        { t: "季节调整与移动平均" },
+        { t: "通胀预期与通胀粘性" },
+        { t: "资产价格与商品价格的区别" }
+      ]},
+      { t: "就业与劳动力", c: [
+        { t: "调查失业率与登记失业率" },
+        { t: "劳动参与率与就业人口" },
+        { t: "奥肯定律" },
+        { t: "工资与单位劳动成本" }
+      ]},
+      { t: "国际收支与国际投资头寸", c: [
+        { t: "经常账户、资本与金融账户" },
+        { t: "外汇储备与对外净资产" },
+        { t: "误差与遗漏项的含义" }
+      ]},
+      { t: "资金流量与资产负债表", c: [
+        { t: "各部门储蓄—投资恒等式" },
+        { t: "M2、社融、信贷的口径差异", d: "社融看实体融资需求，M2 看银行负债端；两者背离本身就是信息" },
+        { t: "部门杠杆率与债务结构" },
+        { t: "国家资产负债表" }
+      ]}
+    ]},
+
+    { t: "B 短期波动与经济周期", tag: "核", d: "为什么产出与就业会周期性起落——宏观模型的主战场", c: [
+      { t: "总需求构成", c: [
+        { t: "凯恩斯消费函数与边际消费倾向" },
+        { t: "持久收入假说与生命周期假说" },
+        { t: "投资：托宾 q、资本成本、加速数" },
+        { t: "政府支出、税收与转移支付" },
+        { t: "净出口与外部需求" }
+      ]},
+      { t: "IS-LM 模型", c: [
+        { t: "IS 曲线：商品市场均衡" },
+        { t: "LM 曲线：货币市场均衡" },
+        { t: "两条曲线的斜率与政策含义" },
+        { t: "挤出效应" },
+        { t: "流动性陷阱" }
+      ]},
+      { t: "AD-AS 模型", c: [
+        { t: "总需求曲线的推导" },
+        { t: "短期总供给：粘性工资" },
+        { t: "短期总供给：粘性价格" },
+        { t: "长期总供给与自然率水平" },
+        { t: "供给冲击与滞胀" }
+      ]},
+      { t: "劳动力市场与菲利普斯曲线", c: [
+        { t: "工资设定与价格设定" },
+        { t: "自然失业率" },
+        { t: "原始菲利普斯曲线" },
+        { t: "预期增广的菲利普斯曲线" },
+        { t: "牺牲率与反通胀成本" }
+      ]},
+      { t: "经济周期", c: [
+        { t: "周期成分分解（HP 滤波等）" },
+        { t: "典型事实与变量协动性" },
+        { t: "库存周期与产能周期" },
+        { t: "真实经济周期理论" },
+        { t: "新凯恩斯 DSGE" }
+      ]},
+      { t: "预期与政策博弈", tag: "进", c: [
+        { t: "理性预期与卢卡斯批判" },
+        { t: "时间不一致性" },
+        { t: "规则 vs 相机抉择" },
+        { t: "泰勒规则" },
+        { t: "通胀目标制" }
+      ]}
+    ]},
+
+    { t: "C 中期与长期增长", tag: "核", d: "什么决定一个国家的长期增速——宏观里唯一真正复利的部分", c: [
+      { t: "增长核算", c: [
+        { t: "生产函数与要素收入份额" },
+        { t: "索洛余值与全要素生产率（TFP）" },
+        { t: "增长核算的局限" }
+      ]},
+      { t: "索洛模型", c: [
+        { t: "资本积累与稳态" },
+        { t: "黄金律资本存量" },
+        { t: "绝对收敛与条件收敛" },
+        { t: "引入技术进步" }
+      ]},
+      { t: "新增长理论", tag: "进", c: [
+        { t: "内生增长与 AK 模型" },
+        { t: "研发、创新与知识产权" },
+        { t: "人力资本与教育回报" },
+        { t: "干中学与规模效应" }
+      ]},
+      { t: "制度与政治经济", c: [
+        { t: "产权保护与契约执行" },
+        { t: "国家能力与政府质量" },
+        { t: "地理、文化与殖民遗产" },
+        { t: "资源诅咒" }
+      ]},
+      { t: "结构转型与人口", c: [
+        { t: "农业—工业—服务业的结构变化" },
+        { t: "城市化与户籍制度" },
+        { t: "人口红利、老龄化与人口负增长" },
+        { t: "收入分配与库兹涅茨曲线" }
+      ]}
+    ]},
+
+    { t: "D 政策：财政与货币", tag: "核", d: "政策怎么起效、在哪失效——宏观分析的最高频战场", c: [
+      { t: "财政政策", c: [
+        { t: "预算、赤字率与债务率" },
+        { t: "自动稳定器" },
+        { t: "相机抉择与财政乘数" },
+        { t: "李嘉图等价" },
+        { t: "财政空间与债务可持续性" },
+        { t: "财政规则与中期财政框架" }
+      ]},
+      { t: "货币政策", tag: "核", c: [
+        { t: "最终目标与多重目标制" },
+        { t: "中间目标：数量型 vs 价格型" },
+        { t: "工具：政策利率、准备金率、公开市场操作" },
+        { t: "结构性货币政策工具" },
+        { t: "传导渠道：利率、信贷、资产价格、汇率、预期" },
+        { t: "基础货币、货币乘数与央行资产负债表" },
+        { t: "非常规政策：QE、前瞻指引、负利率、收益率曲线控制" },
+        { t: "央行独立性与政策信誉" }
+      ]},
+      { t: "政策协调与宏观审慎", c: [
+        { t: "财政—货币组合" },
+        { t: "宏观审慎与逆周期资本缓冲" },
+        { t: "三元悖论（不可能三角）" },
+        { t: "政策时滞与不确定性" }
+      ]}
+    ]},
+
+    { t: "E 开放经济", tag: "核", d: "汇率、资本流动与国际收支——把封闭模型打开", c: [
+      { t: "汇率基础", c: [
+        { t: "名义汇率、实际汇率与有效汇率" },
+        { t: "购买力平价" },
+        { t: "抛补与非抛补利率平价" },
+        { t: "汇率制度谱系" }
+      ]},
+      { t: "国际收支与资本流动", c: [
+        { t: "经常账户的储蓄—投资视角" },
+        { t: "资本流动与突然停止" },
+        { t: "外债与货币错配" },
+        { t: "国际储备管理" }
+      ]},
+      { t: "蒙代尔—弗莱明模型", c: [
+        { t: "固定汇率下的政策效果" },
+        { t: "浮动汇率下的政策效果" },
+        { t: "三元悖论与中间制度" }
+      ]},
+      { t: "全球体系", tag: "进", c: [
+        { t: "全球失衡与储备货币体系" },
+        { t: "贸易、关税与全球价值链" },
+        { t: "国际经济政策协调" },
+        { t: "美元周期与新兴市场" }
+      ]}
+    ]},
+
+    { t: "F 金融、债务与危机", tag: "核", d: "金融不是外生变量，而是周期的放大器", c: [
+      { t: "货币与银行", c: [
+        { t: "货币职能与货币层次" },
+        { t: "信用货币与货币内生性" },
+        { t: "银行资产负债表与信用创造" },
+        { t: "影子银行与非银机构" },
+        { t: "最后贷款人与存款保险" }
+      ]},
+      { t: "债务与杠杆", c: [
+        { t: "部门杠杆率与偿债能力" },
+        { t: "债务可持续性分析" },
+        { t: "资产负债表衰退", d: "私人部门集体修复资产负债表，货币政策失效——理解日本与当下中国的关键" },
+        { t: "债务通缩" },
+        { t: "去杠杆的三条路径" }
+      ]},
+      { t: "资产价格与金融周期", c: [
+        { t: "房地产周期与土地价格" },
+        { t: "股票市场与财富效应" },
+        { t: "金融加速器" },
+        { t: "明斯基时刻与庞氏融资" },
+        { t: "金融周期与实体周期的错位" }
+      ]},
+      { t: "危机与应对", tag: "进", c: [
+        { t: "银行挤兑与系统性风险" },
+        { t: "货币危机与主权债务危机" },
+        { t: "救助、重组与坏账处置" },
+        { t: "危机后的资产负债表修复" }
+      ]}
+    ]},
+
+    { t: "G 中国宏观专题", tag: "核", d: "教科书之外必须补的一半：财政体制、土地、地方政府", c: [
+      { t: "增长模式", c: [
+        { t: "地方政府竞争与招商引资" },
+        { t: "土地财政与城投平台" },
+        { t: "出口导向与产业政策" },
+        { t: "双轨制与渐进改革" }
+      ]},
+      { t: "财政体制", c: [
+        { t: "分税制与转移支付" },
+        { t: "地方政府债务与隐性债务" },
+        { t: "专项债与预算外资金" },
+        { t: "财政与货币的边界" }
+      ]},
+      { t: "金融体系", c: [
+        { t: "银行主导的间接融资结构" },
+        { t: "社融结构与影子银行监管" },
+        { t: "利率市场化与 LPR 改革" },
+        { t: "汇率管理与资本账户" }
+      ]},
+      { t: "房地产", c: [
+        { t: "土地供给制度与预售制" },
+        { t: "三道红线与房企融资" },
+        { t: "房地产—地方财政—居民资产负债表" }
+      ]},
+      { t: "政策框架", c: [
+        { t: "五年规划与产业政策" },
+        { t: "中央经济工作会议与政治局会议" },
+        { t: "多目标货币政策与结构性工具" },
+        { t: "稳增长、防风险、调结构的三元取舍" }
+      ]},
+      { t: "转型议题", tag: "进", c: [
+        { t: "人口负增长与老龄化" },
+        { t: "高储蓄率与消费不足" },
+        { t: "共同富裕与收入分配" },
+        { t: "绿色转型与碳定价" }
+      ]}
+    ]},
+
+    { t: "H 学派与思想史", tag: "进", d: "最后读：先有框架，再看得失", c: [
+      { t: "古典与新古典经济学" },
+      { t: "凯恩斯革命" },
+      { t: "货币主义与弗里德曼" },
+      { t: "新古典宏观经济学与卢卡斯" },
+      { t: "新凯恩斯主义" },
+      { t: "奥地利学派与后凯恩斯学派" },
+      { t: "发展经济学与结构主义" },
+      { t: "当代共识与仍在争论的问题" }
+    ]},
+
+    { t: "I 数据与方法", tag: "核", d: "把模型落到数字上，是宏观学习真正拉开差距的一层", c: [
+      { t: "数据源", c: [
+        { t: "国家统计局、中国人民银行、财政部、海关、外汇局" },
+        { t: "Wind、Choice、CEIC" },
+        { t: "FRED、IMF IFS、BIS、OECD" }
+      ]},
+      { t: "数据处理", c: [
+        { t: "季节调整与同比环比换算" },
+        { t: "平减与不变价换算" },
+        { t: "HP 滤波与产出缺口估计" }
+      ]},
+      { t: "分析工具", tag: "进", c: [
+        { t: "恒等式与会计分解" },
+        { t: "向量自回归（VAR）" },
+        { t: "DSGE 模型" },
+        { t: "面板与跨国回归" }
+      ]},
+      { t: "阅读材料", c: [
+        { t: "央行《货币政策执行报告》" },
+        { t: "IMF《世界经济展望》与 Article IV" },
+        { t: "《金融稳定报告》" },
+        { t: "券商宏观研报拆解" }
+      ]}
+    ]}
+  ];
+
+  var treeEl = document.getElementById("tree");
+  var navEl = document.getElementById("nav");
+  var barEl = document.getElementById("bar");
+  var statEl = document.getElementById("stat");
+  var qEl = document.getElementById("q");
+
+  var roots = [];
+  var allNodes = [];
+  var checked = {};
+  var openIds = {};
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(LS) || "{}");
+    (saved.checked || []).forEach(function (id) { checked[id] = true; });
+    (saved.open || []).forEach(function (id) { openIds[id] = true; });
+  } catch (e) {}
+
+  function save() {
+    try {
+      localStorage.setItem(LS, JSON.stringify({
+        checked: Object.keys(checked).filter(function (k) { return checked[k]; }),
+        open: Object.keys(openIds).filter(function (k) { return openIds[k]; })
+      }));
+    } catch (e) {}
+  }
+
+  function el(tag, cls, txt) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (txt != null) d.textContent = txt;
+    return d;
+  }
+
+  function build(data, parent, path, color) {
+    var hasKids = !!(data.c && data.c.length);
+    var node = {
+      id: path.join("-"),
+      data: data,
+      children: [],
+      parent: parent,
+      el: null,
+      tx: null,
+      desc: null
+    };
+
+    var wrap = el("div", "node " + (parent ? (parent.parent ? "" : "lv2") : "lv1") + (hasKids ? " branch" : " leaf"));
+    wrap.style.setProperty("--c", color);
+
+    var row = el("div", "row");
+    row.appendChild(el("span", "caret", hasKids ? "▸" : ""));
+    row.appendChild(el("span", "chk"));
+
+    var label = el("div", "label");
+    var tRow = el("div", "t");
+    var tx = el("span", "tx", data.t);
+    tRow.appendChild(tx);
+    if (data.tag) tRow.appendChild(el("span", "tag tag-" + data.tag, data.tag));
+    label.appendChild(tRow);
+    if (data.d) {
+      node.desc = el("div", "d", data.d);
+      label.appendChild(node.desc);
+    }
+    row.appendChild(label);
+    wrap.appendChild(row);
+
+    node.el = wrap;
+    node.tx = tx;
+
+    if (hasKids) {
+      var kids = el("div", "children");
+      data.c.forEach(function (child, i) {
+        var cn = build(child, node, path.concat(i), color);
+        kids.appendChild(cn.el);
+        node.children.push(cn);
+      });
+      wrap.appendChild(kids);
+      if (openIds[node.id]) wrap.classList.add("open");
+      row.addEventListener("click", function () {
+        var on = !wrap.classList.contains("open");
+        wrap.classList.toggle("open", on);
+        openIds[node.id] = on;
+        save();
+      });
+    } else {
+      if (checked[node.id]) wrap.classList.add("checked");
+      row.addEventListener("click", function () {
+        var on = !wrap.classList.contains("checked");
+        wrap.classList.toggle("checked", on);
+        if (on) checked[node.id] = true; else delete checked[node.id];
+        save();
+        updateProgress();
+      });
+    }
+
+    allNodes.push(node);
+    return node;
+  }
+
+  TREE.forEach(function (d, i) {
+    var n = build(d, null, [i], COLORS[i % COLORS.length]);
+    roots.push(n);
+    treeEl.appendChild(n.el);
+  });
+
+  function updateProgress() {
+    var leaves = allNodes.filter(function (n) { return !n.children.length; });
+    var done = leaves.filter(function (n) { return checked[n.id]; }).length;
+    var pct = leaves.length ? Math.round(done / leaves.length * 100) : 0;
+    barEl.style.width = pct + "%";
+    statEl.textContent = "已掌握 " + done + " / " + leaves.length + "（" + pct + "%）";
+  }
+
+  document.getElementById("expandAll").addEventListener("click", function () {
+    allNodes.forEach(function (n) {
+      if (n.children.length) { n.el.classList.add("open"); openIds[n.id] = true; }
+    });
+    save();
+  });
+
+  document.getElementById("collapseAll").addEventListener("click", function () {
+    allNodes.forEach(function (n) {
+      if (n.children.length) { n.el.classList.remove("open"); delete openIds[n.id]; }
+    });
+    save();
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    checked = {};
+    allNodes.forEach(function (n) { n.el.classList.remove("checked"); });
+    save();
+    updateProgress();
+  });
+
+  // ---- 侧栏导航 ----
+  roots.forEach(function (r) {
+    var b = el("button", "navbtn");
+    var d = el("span", "dot");
+    d.style.background = r.el.style.getPropertyValue("--c");
+    b.appendChild(d);
+    b.appendChild(el("span", null, r.data.t));
+    b.addEventListener("click", function () {
+      clearSearch();
+      r.el.classList.add("open");
+      openIds[r.id] = true;
+      save();
+      r.el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    navEl.appendChild(b);
+  });
+
+  // ---- 搜索 ----
+  var lastQ = "";
+
+  function paintText(target, txt, q) {
+    if (!q) { target.textContent = txt; return; }
+    target.textContent = "";
+    var low = txt.toLowerCase(), idx = 0, pos;
+    while ((pos = low.indexOf(q, idx)) >= 0) {
+      if (pos > idx) target.appendChild(document.createTextNode(txt.slice(idx, pos)));
+      var m = document.createElement("mark");
+      m.textContent = txt.substr(pos, q.length);
+      target.appendChild(m);
+      idx = pos + q.length;
+    }
+    if (idx < txt.length) target.appendChild(document.createTextNode(txt.slice(idx)));
+  }
+
+  function runFilter(raw) {
+    var q = (raw || "").trim().toLowerCase();
+    lastQ = q;
+    document.body.classList.toggle("searching", !!q);
+
+    function visit(node) {
+      var selfHit = !!q && (node.data.t + " " + (node.data.d || "")).toLowerCase().indexOf(q) >= 0;
+      var childHit = false;
+      node.children.forEach(function (c) { if (visit(c)) childHit = true; });
+      var hit = selfHit || childHit;
+      node.el.classList.toggle("hidden", !!q && !hit);
+      node.el.classList.toggle("force-open", !!q && childHit);
+      paintText(node.tx, node.data.t, selfHit ? q : "");
+      if (node.desc) paintText(node.desc, node.data.d, selfHit ? q : "");
+      return hit;
+    }
+    roots.forEach(visit);
+  }
+
+  function clearSearch() {
+    if (!lastQ) return;
+    qEl.value = "";
+    runFilter("");
+  }
+
+  qEl.addEventListener("input", function () { runFilter(qEl.value); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && document.activeElement !== qEl) {
+      e.preventDefault();
+      qEl.focus();
+      qEl.select();
+    } else if (e.key === "Escape" && document.activeElement === qEl) {
+      qEl.value = "";
+      runFilter("");
+      qEl.blur();
+    }
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>

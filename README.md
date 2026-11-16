@@ -34,6 +34,7 @@ static/CNAME              自定义域名（Hugo 原样拷到 public/）
 static/heatmap/index.html 每日板块热力图（自动写入，勿手改）
 static/photography/index.html 摄影技能树（来源 learning/摄影技能树.html 的副本）
 static/design-prompt/index.html 设计提示词技能树（来源 learning/设计提示词技能树.html 的副本）
+static/economics/index.html  宏观经济学知识树（来源 learning/宏观经济学知识树.html 的副本）
 deploy.sh                 构建 + 强制推送 gh-pages
 publish_heatmap.sh        热力图同步 + 发布 + 线上校验（launchd 调）
 logs/publish.log          发布日志
