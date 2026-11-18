@@ -163,7 +163,7 @@ git log --oneline -1                                             # 确认源码�
 | 3 | 发布后浏览器还在用旧样式 | 已修：CSS 改走 Hugo Pipes **内容指纹**，不用手动清缓存 |
 | 4 | 进站欢迎界面「叫哥才给进」 | `layouts/partials/gate.html`，输入**包含「哥」**即通过，`sessionStorage` 记住；**只拦 Hugo 页面，`static/` 裸页（heatmap/photography/design-prompt/economics）完全不受保护**，知道链接就能看 |
 | 5 | 热力图打开慢 | 3.7MB（gzip 后约 1.2MB），国内线路 1–2 分钟，属已知代价 |
-| 6 | 仓库越来越大 | 每天一个新热力图进 git，一年约 100–150MB，GitHub Pages 上限 1GB |
+| 6 | 仓库越来越大 | 每天新增一个 3.8MB 的热力图文件；**注意现在 `main` 与 `gh-pages` 各存一份，增量翻倍**。GitHub 侧压缩后实际增量远小于单文件大小（2026-11-18 实测仓库总体积约 2.4MB）。Pages 上限 1GB，`publish_heatmap.sh` 有 300MB/800MB 两级守卫 |
 | 7 | HTTPS 证书异常 | 曾长期只有 `*.github.io` 证书，需在 GitHub Pages 设置里确认域名并勾选 Enforce HTTPS（**改设置要开代理**） |
 | 8 | `secrets/` 不存在，但别乱加 | 站点是纯静态公开仓库，任何密钥写进来就等于公开 |
 
