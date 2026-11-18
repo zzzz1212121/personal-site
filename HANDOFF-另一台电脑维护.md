@@ -70,6 +70,35 @@ hugo server -D                            # 打开 http://localhost:1313
 | **账号 SSH key** | 公钥贴到 GitHub 个人 `Settings → SSH keys` | 本人长期使用的机器（**本机就是这样**） | 对该账号所有仓库可写 —— 机器被入侵损失大 |
 | **fine-grained PAT** | GitHub 个人设置里签发，限定仓库 + `Contents: Read and write`，clone 用 `https://<token>@github.com/...` | 不想配 SSH、或要给脚本用 | token 明文存在本地，容易泄漏；用完应吊销 |
 
+### Deploy Key 具体步骤（推荐给非本人机器）
+
+```bash
+# 1) 生成一对**专用**密钥（不要复用账号 key）
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_site -C "deploy: personal-site"
+cat ~/.ssh/id_ed25519_site.pub          # 复制这一整行
+
+# 2) 粘贴到：GitHub 仓库 → Settings → Deploy keys → Add deploy key
+#    ⚠ 必须勾选 Allow write access，否则只能读
+
+# 3) 让 git 自动用这把 key（写进 ~/.ssh/config）
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_site
+  IdentitiesOnly yes
+EOF
+
+# 4) 验证（Deploy key 认出来的是仓库名，不是账号名，这是正常的）
+ssh -T git@github.com      # 期望：Hi zzzz1212121/personal-site! You've successfully authenticated...
+git push --dry-run origin main
+```
+
+**三个坑**：
+- **同一把公钥不能同时当账号 key 和 Deploy key**，GitHub 会报 `key is already in use`。要分开两把。
+- `Host github.com` 那段是**账号级**的：如果这台机器还要访问别的仓库，`IdentityFile` 会强制覆盖，需要改成 `Host github.com-personal-site` + 改 remote 地址。
+- Deploy key 只对**这一个仓库**有效，`main` 和 `gh-pages` 都能推（除非开了分支保护）。
+
 ### 三条铁律
 
 1. **私钥永不外传、永不入仓库**。公钥（`.pub`）可以随便贴；私钥（无后缀那个，本机在 `~/.ssh/id_ed25519`，权限 600）必须留在生成它的那台机器上。
@@ -242,6 +271,18 @@ SITE_REPO="https://github.com/zzzz1212121/personal-site.git" bash deploy.sh   # 
 ### 9.5 如果对方是受安全策略限制的 agent 环境
 
 Windows 端实测遇到的限制（不是站点问题，供排查参考）：`~/.ssh` 整目录禁访问（`ssh-keygen` 须人工执行）、`git checkout -- <file>` 被拦（改用 `git show HEAD:<path> > <path>`）、`rm -rf` 不能作用于 cwd 之外、MSYS 缺 `unzip`/`iconv`、Windows Python 默认 GBK 需 `PYTHONIOENCODING=utf-8`。
+
+
+### 9.6 两端同时维护的发布协议（2026-11-18 定）
+
+| 规则 | 原因 |
+|---|---|
+| **发布前必须 `git pull --rebase` 且 `git status` 干净** | `deploy.sh` 是拿**工作区**构建的；工作区里有旧版热力图 → 一发布就把线上顶回去（就是 P0 的形态） |
+| **热力图只在 Mac 端产出** | 数据源在 `trading-system/`，另一台机器没有 |
+| Windows 只改**文章 / 页面 / 样式** | 与热力图零交集，天然不冲突 |
+| 万一 Windows 也要发布：先 `git pull` 拿到最新 `static/heatmap/index.html` 再发 | 否则线上热力图回退 |
+| 真撞车了：**热力图以 Mac 为准，其它文件以先推者为准** | 热力图是机器产物，人改不动；其它是文本，好合并 |
+| 不要 `git push -f origin main` | 只允许 gh-pages 强推，`deploy.sh` 已封装 |
 
 ## 附：给 agent 的开场提示（可直接复制）
 
