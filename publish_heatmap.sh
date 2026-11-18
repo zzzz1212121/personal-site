@@ -55,6 +55,15 @@ cd "$SITE" || fail "进不去站点目录"
 export PATH="/opt/homebrew/bin:$PATH"
 bash deploy.sh >>"$LOG" 2>&1 || fail "构建或推送失败（详见 ${LOG}）"
 
+# 让 main 也持有这份热力图。
+# 不加这段的后果（2026-11-18 Windows 端实测）：main 里的热力图停在最后一次手工提交的版本，
+# 任何新机器 clone 后跑 deploy.sh，都会把线上热力图回退到那个旧版（实测差了 12 天 / 163KB）。
+git add static/heatmap/index.html >>"$LOG" 2>&1 || true
+git -c user.name="zzzz1212121" -c user.email="15539819327@163.com" \
+    commit -q -m "chore: 更新热力图 $(date '+%Y-%m-%d')" >>"$LOG" 2>&1 || true
+git push origin main >>"$LOG" 2>&1 \
+  || notify_once "🌐 热力图已上 gh-pages，但同步 main 失败（下次新机部署会回退）"
+
 echo "[$(date '+%F %T')] 推送完成，60 秒后校验线上" >>"$LOG"
 sleep 60
 

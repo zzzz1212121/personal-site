@@ -29,7 +29,7 @@ content/posts/            文章（Markdown）
 content/about.md          关于页
 layouts/                  模板：baseof / index / list / single / robots.txt
 layouts/partials/gate.html 进站欢迎界面「叫哥才给进」（自动注入所有页面）
-static/css/style.css      样式
+assets/css/style.css      样式（Hugo Pipes：resources.Get "css/style.css" | minify | fingerprint；⚠ 不是 static/css/）
 static/CNAME              自定义域名（Hugo 原样拷到 public/）
 static/heatmap/index.html 每日板块热力图（自动写入，勿手改）
 static/photography/index.html 摄影技能树（来源 learning/摄影技能树.html 的副本）
@@ -86,7 +86,7 @@ sector-dashboard/output/strategy_heatmap.html
 | 无 JS | `<noscript>` 兜底自动隐藏，不挡真实用户与搜索引擎 |
 | 覆盖范围 | 只拦 Hugo 生成的页面；`/heatmap/` 是 static 裸页，**不在拦截范围** |
 
-样式在 `static/css/style.css` 末尾「进站口令」段，沿用站点 CSS 变量（支持深色模式）。
+样式在 `assets/css/style.css` 末尾「进站口令」段，沿用站点 CSS 变量（支持深色模式）。
 
 **想改口令**：编辑 `gate.html` 里的 `var OK = ['哥'];`（数组里任一子串命中即通过）。
 **想临时关掉**：删掉 `baseof.html` 里那行 `{{ partial "gate.html" . }}` 再发布。

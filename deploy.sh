@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")"
 
-REPO="git@github.com:zzzz1212121/personal-site.git"
+REPO="${SITE_REPO:-git@github.com:zzzz1212121/personal-site.git}"
 GIT_ID=(-c user.name="zzzz1212121" -c user.email="15539819327@163.com")
 
 echo "==> 1/3 构建"

@@ -14,3 +14,6 @@ resources/_gen/
 
 # 欢迎界面预览截图
 .gate-preview/
+
+# 本机 launchd 残留日志（不入库）
+logs/launchd_*.log
