@@ -48,6 +48,42 @@ hugo server -D                            # 打开 http://localhost:1313
 
 ---
 
+---
+
+## 1.5 凭证：**这份文档本身不带任何权限**
+
+**先把话说清楚**：拿到这份 MD 文件 ≠ 能上传。文档只是"怎么做"，真正决定能不能推送的是**那台电脑上有没有被 GitHub 认可的凭证**。
+
+| 动作 | 需要什么 | 拿不到会怎样 |
+|---|---|---|
+| clone 仓库（只读） | 不需要凭证（public 仓库，https 也行） | — |
+| `git push`（main / gh-pages） | **该账号对该仓库的写权限** | 报 `Permission to zzzz1212121/personal-site.git denied` |
+| 改 Pages 设置 / 域名 / Enforce HTTPS | **账号登录**（网页操作，本机需开代理） | 页面打不开、证书异常 |
+
+> GitHub **早已不支持用账号密码 push**（2021 年取消）。可用凭证只有三种：SSH key、Personal Access Token、`gh auth login`。
+
+### 三种方式，按安全性从高到低
+
+| 方式 | 怎么配 | 适用 | 风险 |
+|---|---|---|---|
+| **Deploy Key**（仓库级、只给这一个仓库） | 那台机器 `ssh-keygen -t ed25519` → 公钥贴到 GitHub 仓库 `Settings → Deploy keys`，勾 **Allow write access** | 只想让它发这一个站（推荐给非本人机器/临时代理） | 只能推这一个仓库；`gh-pages` 够用，`main` 提交要看分支保护 |
+| **账号 SSH key** | 公钥贴到 GitHub 个人 `Settings → SSH keys` | 本人长期使用的机器（**本机就是这样**） | 对该账号所有仓库可写 —— 机器被入侵损失大 |
+| **fine-grained PAT** | GitHub 个人设置里签发，限定仓库 + `Contents: Read and write`，clone 用 `https://<token>@github.com/...` | 不想配 SSH、或要给脚本用 | token 明文存在本地，容易泄漏；用完应吊销 |
+
+### 三条铁律
+
+1. **私钥永不外传、永不入仓库**。公钥（`.pub`）可以随便贴；私钥（无后缀那个，本机在 `~/.ssh/id_ed25519`，权限 600）必须留在生成它的那台机器上。
+2. **不要"把本机私钥拷到另一台机器"**。正确做法是在那台机器上新生成一对，再把公钥贴到 GitHub —— 这样任何一台出事都能单独吊销。
+3. **给 agent 的机器用最小权限**：优先 Deploy Key（单仓库），别直接给它账号级 SSH key。
+
+### 验证是否已具备写权限
+
+```bash
+ssh -T git@github.com                 # 认出来是哪个账号
+git ls-remote origin                 # 能列出分支 = 读通
+git push --dry-run origin main       # 不实际推送，只验证权限
+```
+
 ## 2. 日常维护只有三类活
 
 | 任务 | 做法 |
