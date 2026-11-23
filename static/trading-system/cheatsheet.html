@@ -7,24 +7,42 @@
 body{margin:0;background:#f6f6f4;color:var(--fg);
  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
  line-height:1.75;font-size:16px}
-.wrap{max-width:960px;margin:0 auto;padding:40px 26px 100px;background:var(--bg);
+.wrap{max-width:960px;margin:0 auto;padding:48px 28px 120px;background:var(--bg);
  box-shadow:0 0 24px rgba(0,0,0,.06)}
-h1{font-size:28px;line-height:1.35;margin:8px 0 20px;padding-bottom:12px;
- border-bottom:2px solid var(--fg)}
-h2{font-size:21px;margin:34px 0 12px;padding-left:12px;border-left:5px solid var(--accent)}
-h3{font-size:17.5px;margin:24px 0 8px}
-table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;display:block;overflow:auto}
-th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+h1{font-size:30px;line-height:1.35;margin:56px 0 18px;padding-bottom:12px;
+ border-bottom:2px solid var(--fg);letter-spacing:.5px}
+h1:first-of-type{margin-top:8px;border-bottom:none;font-size:38px;text-align:center}
+h2{font-size:23px;margin:40px 0 14px;padding-left:12px;border-left:5px solid var(--accent)}
+h3{font-size:18.5px;margin:28px 0 10px;color:#222}
+h4{font-size:16.5px;margin:22px 0 8px;color:#333}
+p{margin:10px 0}
+blockquote{margin:18px 0;padding:12px 18px;background:#fbf7f0;border-left:4px solid #d8b26a;
+ color:#4a4038;border-radius:0 6px 6px 0}
+blockquote p{margin:6px 0}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14.5px;overflow:auto;display:block}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
 th{background:#f2f2ef;font-weight:600;white-space:nowrap}
 tr:nth-child(even) td{background:#fafaf8}
-blockquote{margin:16px 0;padding:10px 16px;background:#fbf7f0;border-left:4px solid #d8b26a;
- color:#4a4038;border-radius:0 6px 6px 0}
-code{background:#f3f3f1;padding:1px 5px;border-radius:4px;font-size:14px}
-hr{border:none;border-top:1px solid var(--line);margin:30px 0}
-ul,ol{padding-left:24px}li{margin:4px 0}
+code{background:#f3f3f1;padding:1px 5px;border-radius:4px;font-size:14px;
+ font-family:Consolas,Monaco,monospace}
+pre{background:#f7f7f5;border:1px solid var(--line);border-radius:8px;padding:14px;
+ overflow:auto;font-size:13.5px;line-height:1.55}
+pre code{background:none;padding:0}
+hr{border:none;border-top:1px solid var(--line);margin:36px 0}
+ul,ol{padding-left:26px}
+li{margin:4px 0}
+strong{color:#000}
 a{color:#1a56b3;text-decoration:none}
+a:hover{text-decoration:underline}
+#TOC{background:#faf9f6;border:1px solid var(--line);border-radius:10px;padding:18px 26px;
+ margin:28px 0 40px}
+#TOC>ul{list-style:none;padding-left:4px}
+#TOC ul{list-style:none;padding-left:18px}
+#TOC li{margin:3px 0}
+#TOC>ul>li>a{font-weight:600}
+.header-note{color:var(--muted);font-size:13px;text-align:center;margin-top:-8px}
 @media print{body{background:#fff}.wrap{box-shadow:none;max-width:none;padding:0}
- h2{page-break-after:avoid}tr{page-break-inside:avoid}}
+ h1{page-break-before:always}}
 </style></head><body><style>
 .ts-nav{position:sticky;top:0;z-index:99;display:flex;flex-wrap:wrap;gap:14px;
  padding:9px 16px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);
@@ -32,15 +50,15 @@ a{color:#1a56b3;text-decoration:none}
  "PingFang SC","Microsoft YaHei",sans-serif}
 .ts-nav a{color:#1a56b3;text-decoration:none}
 .ts-nav a:hover{text-decoration:underline}
-</style><div class="ts-nav"><a href="./index.html">← 交易体系首页</a>
+</style><div class="ts-nav"><a href="./index.html">← 体系首页</a>
 <a href="./book.html">完整书稿</a>
-<a href="./cheatsheet.html">一页速查卡</a>
-<a href="./study-path.html">学习路径</a>
-<a href="./frames-ocr.html">画面 OCR 索引</a></div><div class="wrap">
+<a href="./cheatsheet.html">一页速查卡</a></div><div class="wrap">
+<p><a id="a股短线交易体系-一页速查卡"></a></p>
 <h1>A股短线交易体系 · 一页速查卡</h1>
 <blockquote>
-<p>打印/收藏用。所有数字出自课程原文，详见《A股短线交易体系》正文与附录C。</p>
+<p>打印/收藏用。所有数字出自体系原文，详见《A股短线交易体系》正文与附录B。</p>
 </blockquote>
+<p><a id="①-第一步-今天是几月-决定做不做-做什么"></a></p>
 <h2>① 第一步：今天是几月？（决定做不做、做什么）</h2>
 <table>
 <thead>
@@ -105,6 +123,7 @@ a{color:#1a56b3;text-decoration:none}
 <blockquote>
 <p>银行 ETF（512800）反向验证：<strong>1月 +34.72%、4月 +10.91%</strong>；3月 −12.59%、5月 −11.17%。<strong>中字头涨＝抽血开始。</strong></p>
 </blockquote>
+<p><a id="②-第二步-今天什么温度-看中证2000-不看别的情绪指标"></a></p>
 <h2>② 第二步：今天什么温度？（看中证2000，不看别的情绪指标）</h2>
 <table>
 <thead>
@@ -161,6 +180,7 @@ a{color:#1a56b3;text-decoration:none}
 </tbody>
 </table>
 <p>小盘股再减 10%（银行/高股息常年红，占约 10% 干扰项）。<strong>涨停数/封板率/连板高度只是投影，不用统计。</strong></p>
+<p><a id="③-第三步-选哪个方向"></a></p>
 <h2>③ 第三步：选哪个方向？</h2>
 <p><strong>四级风口（从高到低）</strong>
 1. <strong>新行业赛道</strong>（超长期、十倍）→ 重仓躺
@@ -168,12 +188,14 @@ a{color:#1a56b3;text-decoration:none}
 3. <strong>突发事件短炒</strong>（2-3天，龙头1-3个一字）→ 轻仓打首板前排
 4. <strong>技术预测（打野）</strong>→ 不做</p>
 <p><strong>先定容量</strong>：钱少做小盘（2000/微盘），钱多做容量（大票/转债）。宽→窄→板块最强个股，顺序不能倒。</p>
+<p><a id="④-第四步-买哪一只"></a></p>
 <h2>④ 第四步：买哪一只？</h2>
 <p><strong>龙一硬标准只有一条：板块内最早涨停。</strong>（不看封单、不看板位、不看谁涨得快）
 辅助：封单巨量＝判断次日能否开一字；助攻数量＝决定强度。
 <strong>强度五级台阶</strong>：一字跌停 ＜ 正常跌停 ＜ 正常 ＜ 正常涨停 ＜ 一字涨停。<strong>没跨级别＝没力度。</strong></p>
 <p><strong>情绪周期九阶段</strong>：冰点(2板)→修复(2-3板)→试错轮动(2-5板)→打开(5板起)→加速(7-9板)→高潮(11-13板)→分歧(断板)→退潮(龙死)→反转点(2板)。
 → 冰点买、高潮卖、退潮空仓。</p>
+<p><a id="⑤-第五步-怎么下手-五个高频战法"></a></p>
 <h2>⑤ 第五步：怎么下手？（五个高频战法）</h2>
 <table>
 <thead>
@@ -224,6 +246,7 @@ a{color:#1a56b3;text-decoration:none}
 </tbody>
 </table>
 <p><strong>竞价三阶段</strong>：9:15-9:20 可撤单→<strong>不算数</strong>；9:20-9:25 不可撤→<strong>只看这五分钟</strong>；9:25 定格开盘价。<strong>抢竞价≠高开</strong>（方向≠位置）。</p>
+<p><a id="⑥-第六步-风控-决定你能活多久"></a></p>
 <h2>⑥ 第六步：风控（决定你能活多久）</h2>
 <ul>
 <li>往返损耗 <strong>0.32%</strong>；满仓账号寿命 <strong>300-500 次</strong>；散户亏损率 <strong>93%</strong>。</li>
@@ -231,6 +254,7 @@ a{color:#1a56b3;text-decoration:none}
 <li>出手有效率：20% 胜率连出 2 次＝4%；30% 出 3 次；40% 出 4 次≈2%——<strong>低胜率别频繁出手。</strong></li>
 <li>单笔止损写死；模式外不做；<strong>必须用 Excel 记每一笔的亏损原因</strong>（名称/金额/日期/原因，&gt;2000元全记）。</li>
 </ul>
+<p><a id="⑦-十条纪律-贴在显示器上"></a></p>
 <h2>⑦ 十条纪律（贴在显示器上）</h2>
 <ol>
 <li>先看月份，再看温度，最后才看票。</li>
@@ -244,6 +268,6 @@ a{color:#1a56b3;text-decoration:none}
 <li>赚钱效应最强的地方风险最大。</li>
 <li>顶部只能预测区间，不能预测某天——<strong>分批卖</strong>。</li>
 </ol>
-<hr />
-<p><em>本卡所有数字来自课程（详见附录C 关键数字速查）。课程口径，未经独立验证；不构成投资建议。</em></p>
+<hr>
+<p><em>本卡所有数字来自（详见附录B 关键数字速查）。经验口径，未经独立验证；不构成投资建议。</em></p>
 </div></body></html>
