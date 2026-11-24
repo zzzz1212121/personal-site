@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设计提示词技能树 · 进度跟踪</title>
+<!--
+  这份与 learning/摄影技能树.html 是配套的一套：
+  沿用同一组颜色令牌、同一套三态进度（未开始/学习中/已掌握）、同一份 localStorage 逻辑。
+  差别只在内容维度：摄影树回答"怎么拍好"，这棵树回答"怎么把看到的好，说成 AI 能执行的话"。
+
+  设计取舍说明（本身即示范）：
+  1. 全站只用一个强调色 --accent，其余全部由透明度分层，不引入第二种彩色。
+  2. 字号只用 6 档，间距只用 4/8/12/16/24/32/48，没有随手值。
+  3. 层级靠边框左侧 3px 色条 + 背景微差，不用投影。
+-->
+<style>
+  :root{
+    /* 颜色令牌：与摄影技能树完全一致，保证两份文件是同一套视觉语言 */
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2b313d;
+    --fg:#e8ecf3; --muted:#8b95a7; --accent:#5aa9ff;
+    --s0:#3a4150; --s1:#e0a33e; --s2:#2fa96b;
+    /* 间距刻度：全部取 4 的倍数 */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:var(--s6) 28px 80px;
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.65;
+  }
+  h1{font-size:22px; margin:0 0 var(--s1); letter-spacing:.5px}
+  .sub{color:var(--muted); font-size:13px; margin-bottom:var(--s5)}
+  .sub b{color:var(--fg); font-weight:600}
+
+  /* 顶部工具条：sticky + 毛玻璃，滚动时始终可用 */
+  .toolbar{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; gap:var(--s4); flex-wrap:wrap;
+    background:rgba(15,17,21,.92); backdrop-filter:blur(8px);
+    padding:var(--s3) 0 14px; border-bottom:1px solid var(--line); margin-bottom:var(--s5);
+  }
+  .bar{flex:1 1 240px; height:8px; background:var(--panel2); border-radius:99px; overflow:hidden; min-width:160px}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,#2fa96b,#5aa9ff); transition:width .25s}
+  .count{font-variant-numeric:tabular-nums; color:var(--muted)}
+  .count b{color:var(--fg)}
+  button{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    padding:6px 12px; border-radius:8px; cursor:pointer; font-size:13px;
+  }
+  button:hover{border-color:var(--accent); color:var(--accent)}
+  input[type=search]{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    padding:6px 12px; border-radius:8px; font-size:13px; width:180px; outline:none;
+  }
+  input[type=search]:focus{border-color:var(--accent)}
+  .legend{display:flex; gap:14px; color:var(--muted); font-size:12px; flex-wrap:wrap}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle}
+
+  /* 技能树主干：一条竖线串起各层，模拟"树"的生长方向 */
+  .tree{position:relative; padding-left:0}
+  .tree::before{
+    content:""; position:absolute; left:9px; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(180deg,var(--accent),#2fa96b,var(--line));
+    opacity:.5;
+  }
+  .layer{position:relative; padding-left:44px; margin-bottom:26px}
+  .layer::before{
+    content:""; position:absolute; left:10px; top:22px; width:26px; height:2px; background:var(--line);
+  }
+  .layer::after{
+    content:""; position:absolute; left:4px; top:16px; width:12px; height:12px; border-radius:50%;
+    background:var(--panel); border:2px solid var(--accent);
+  }
+  .lhead{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:var(--s1)}
+  .lcode{font-weight:700; color:var(--accent); font-size:15px; letter-spacing:.5px}
+  .lname{font-weight:600; font-size:16px}
+  .lgoal{color:var(--muted); font-size:12.5px}
+  .gate{
+    font-size:12.5px; color:var(--muted); margin:2px 0 var(--s3);
+    border-left:2px solid var(--s2); padding-left:10px;
+  }
+  .gate b{color:var(--s2); font-weight:600}
+
+  /* 节点卡片：点击切换状态；左侧 3px 色条表示状态 */
+  .nodes{display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+  .node{
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--s0);
+    border-radius:10px; padding:10px 12px; cursor:pointer; user-select:none;
+    transition:transform .12s, border-color .12s, background .12s;
+  }
+  .node:hover{transform:translateY(-1px); background:var(--panel2)}
+  .node .id{font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.6px}
+  .node .t{font-weight:600; font-size:13.5px; display:block; margin:1px 0 3px}
+  .node .d{font-size:12px; color:var(--muted); line-height:1.5}
+  /* "怎么练"单独一行并加支线，视觉上区别于"是什么" */
+  .node .drill{
+    font-size:12px; line-height:1.5; margin-top:6px; padding-left:8px;
+    border-left:1px solid var(--line); color:#9aa7ba;
+  }
+  .node .drill em{color:var(--accent); font-style:normal; font-weight:600}
+  .node .bk{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:10.5px; color:var(--muted); margin-top:6px; opacity:.85;
+  }
+  .node .st{font-size:11px; margin-top:7px; color:var(--muted)}
+  .node.s1{border-left-color:var(--s1)} .node.s1 .st{color:var(--s1)}
+  .node.s2{border-left-color:var(--s2); background:#141d19} .node.s2 .st{color:var(--s2)}
+  .node.s2 .t{color:#bfe6d2}
+  .node.hide{display:none}
+
+  section{margin-top:var(--s7)}
+  h2{font-size:16px; margin:0 0 var(--s3); padding-bottom:var(--s2); border-bottom:1px solid var(--line)}
+  h3{font-size:13.5px; margin:var(--s5) 0 var(--s2); color:var(--fg)}
+  table{border-collapse:collapse; width:100%; font-size:13px}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{color:var(--muted); font-weight:600; font-size:12px}
+  td:first-child{white-space:nowrap; color:var(--fg)}
+  .must{color:var(--s2); font-weight:600}
+  .opt{color:var(--s1); font-weight:600}
+  .no{color:#e06c75; font-weight:600}
+  .dep{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; color:#b9c4d4;
+    white-space:pre; overflow-x:auto; line-height:1.7;
+  }
+  .note{
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:8px; padding:12px 14px; font-size:12.5px; color:#b9c4d4; margin:var(--s3) 0;
+  }
+  .note b{color:var(--fg)}
+  .quiz{color:var(--muted); font-size:12.5px}
+  .quiz li{margin-bottom:6px}
+  .foot{color:var(--muted); font-size:12px; margin-top:var(--s6)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<h1>设计提示词技能树 · 进度跟踪</h1>
+<div class="sub">
+  点卡片切换状态：<b>未开始 → 学习中 → 已掌握</b>。进度存在浏览器本地（localStorage），换浏览器不同步。<br>
+  一句话前提：<b>瓶颈不在提示词，在"看见却说不出来"</b>。所以 L0–L2 占七成，L3 提示词只占一成半。
+</div>
+
+<div class="toolbar">
+  <span class="count">已掌握 <b id="c2">0</b> / 学习中 <b id="c1">0</b> / 共 <b id="ct">0</b></span>
+  <div class="bar"><i id="pbar"></i></div>
+  <input type="search" id="q" placeholder="搜索节点 / 关键词">
+  <span class="legend">
+    <span><i class="dot" style="background:var(--s0)"></i>未开始</span>
+    <span><i class="dot" style="background:var(--s1)"></i>学习中</span>
+    <span><i class="dot" style="background:var(--s2)"></i>已掌握</span>
+  </span>
+  <button id="dumpbtn">复制盘点结果</button>
+  <button id="reset">重置全部</button>
+</div>
+<pre id="dump" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:#b9c4d4;white-space:pre-wrap;margin:0 0 18px"></pre>
+
+<section style="margin-top:0">
+  <h2>0. 起点自测（先做这一步，别从第一课重学）</h2>
+  <div class="gate" style="margin-bottom:12px">
+    五个问题，答不上来的那个就是你的起点层。判"会"的标准是<b>能当场做到</b>，不是"听过这个词"。
+  </div>
+  <table>
+    <tr><th>自测问题</th><th>答不上来说明</th><th>从哪开始</th></tr>
+    <tr><td>给一张图，30 秒内说出光从哪来、最亮最暗在哪</td><td>没有拆图习惯，只有"好看/不好看"的结论</td><td class="must">L0 看见</td></tr>
+    <tr><td>能说出"这张图为什么高级"里具体的 3 个要素</td><td>缺乏术语，描述停留在形容词</td><td class="must">L1 命名</td></tr>
+    <tr><td>能看出一份 PPT/网页用了几个字号、几种颜色、多少边距</td><td>没有规格意识，只能整体感觉</td><td class="must">L2 结构</td></tr>
+    <tr><td>能用一段话描述清楚，让别人画出你想要的东西</td><td>转译断裂——这是本树的核心目标</td><td class="must">L3 转译</td></tr>
+    <tr><td>同一需求做三版，能说清哪版好、为什么</td><td>没有反馈闭环，凭运气</td><td class="must">L5 闭环</td></tr>
+  </table>
+</section>
+
+<div class="tree" id="tree"></div>
+
+<section>
+  <h2>书单（按优先级，不是按名气）</h2>
+  <div class="gate" style="margin-bottom:12px">
+    真正必读的只有 4 本。其余是"需要时查"，不是"要读完"。<b>这个领域的多数畅销书价值密度很低。</b>
+  </div>
+  <table>
+    <tr><th>优先级</th><th>书</th><th>对应层</th><th>为什么读它 / 怎么读</th></tr>
+    <tr><td class="must">必读</td><td>写给大家看的设计书 · Robin Williams</td><td>L1 版式</td><td>四原则（亲密/对齐/重复/对比）讲得最干净，两天能读完。缺点是例子老，但原则没过时</td></tr>
+    <tr><td class="must">必读</td><td>Light: Science and Magic</td><td>L1 光影</td><td>布光圣经。它不讲"怎么打光"，讲"为什么光会这样"，读完能自己推导</td></tr>
+    <tr><td class="must">必读</td><td>Color and Light · James Gurney</td><td>L1 色彩</td><td>名义上是绘画书，但光色关系讲得比多数摄影书透。适合边画边读</td></tr>
+    <tr><td class="must">必读</td><td>Thinking with Type · Ellen Lupton</td><td>L1 字体</td><td>排印入门，图多字少。中文排版另有约定，但英文那套逻辑是基础</td></tr>
+    <tr><td class="opt">选读</td><td>The Negative · Ansel Adams</td><td>L0/L1 影调</td><td>Zone System——把亮度分成 11 区。理解影调分区后，调色会从"试"变成"算"</td></tr>
+    <tr><td class="opt">选读</td><td>Grid Systems · Müller-Brockmann</td><td>L2 网格</td><td>硬核，直接给你网格结构。做版式/长图时当工具书查，不必通读</td></tr>
+    <tr><td class="opt">选读</td><td>Interaction of Color · Albers</td><td>L1 色彩</td><td>色彩相互作用的经典。必须动手做书里的练习，光读没用</td></tr>
+    <tr><td class="opt">选读</td><td>slide:ology / Presentation Zen</td><td>PPT</td><td>演示设计观念层。两本选一本即可，内容重合度高</td></tr>
+    <tr><td class="opt">选读</td><td>The Visual Display of Quantitative Information · Tufte</td><td>数据汇报</td><td>图表设计的判据来源。做汇报/仪表盘必读</td></tr>
+    <tr><td class="no">别买</td><td>各类「AI 绘画提示词大全」</td><td>—</td><td>词表堆砌，半年过时。它教的是咒语，不是判断</td></tr>
+    <tr><td class="no">别买</td><td>「配色方案 1000 例」类</td><td>—</td><td>收藏即遗忘。不如自己拆 20 组真实案例建成自己的卡</td></tr>
+    <tr><td class="no">别买</td><td>零基础 Photoshop 教程</td><td>—</td><td>软件操作是最容易补的，B 站免费内容更新更快。别占用读书时间</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>不要学什么（比学什么更重要）</h2>
+  <div class="note">
+    <b>这五件事看着像在学习，实际是在消耗时间。</b>它们的共同特征是：有进度感，但没有能力增长。
+  </div>
+  <table>
+    <tr><th>别做</th><th>为什么</th><th>换成什么</th></tr>
+    <tr><td>先系统学软件</td><td>工具三个月就换一代，判断力不会过期。先学工具会让你把"会点按钮"误当成"会设计"</td><td>用最小工具（手机 + 一个免费软件）先做完 10 个作品</td></tr>
+    <tr><td>背配色卡 / 记色号</td><td>脱离场景的色号没有意义。同一个色在深底和浅底上完全不同</td><td>拆真实案例，记录"为什么用这组"，而不是"这组是什么"</td></tr>
+    <tr><td>收藏提示词咒语</td><td>别人的咒语绑定别人的模型版本和风格，换模型即失效</td><td>练结构化描述能力（L3-T1 四段式），它对任何模型都成立</td></tr>
+    <tr><td>同时开五个工具</td><td>每个都半熟，组合不出完整作品</td><td>一条链走通：拍/找 → 修 → 排版 → 输出</td></tr>
+    <tr><td>没有参照就求原创</td><td>原创是熟练后的溢出，不是起点。从零硬憋只会产出平庸的东西</td><td>先临摹 20 张，再谈风格</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>90 天推进路径</h2>
+  <div class="gate" style="margin-bottom:12px">
+    节奏按"每阶段一个可交付物"设计。<b>没有交付物就没有进度</b>，看完不等于学会。
+  </div>
+  <table>
+    <tr><th>阶段</th><th>主攻</th><th>每周动作</th><th>阶段交付物</th></tr>
+    <tr>
+      <td>第 1–4 周</td><td>L0 看见 + L1 色彩/光影</td>
+      <td>每天拆 1 张图（三问，写 50 字）；攒 30 组"术语—现象"对照卡</td>
+      <td>一份 30 张图的拆解笔记，每张能说出光位 + 调性 + 视觉落点</td>
+    </tr>
+    <tr>
+      <td>第 5–8 周</td><td>L1 版式 + L2 结构</td>
+      <td>拆 3 个真实版式（1 份 PPT、1 个网页、1 张海报），各自写出令牌表</td>
+      <td>3 份令牌表（颜色/字号/间距/圆角），能照着复刻近似效果</td>
+    </tr>
+    <tr>
+      <td>第 9–12 周</td><td>L3 转译 + L5 闭环</td>
+      <td>每天一张：拆图 → 写 100 字结构化描述 → 生成 → 对比 → 改一个变量重来</td>
+      <td>30 组"原图 / 描述 / 生成结果 / 差异归因"，其中 10 组达到"别人看描述能猜出原图"</td>
+    </tr>
+  </table>
+</section>
+
+<section>
+  <h2>依赖关系（为什么不能跳层）</h2>
+  <div class="dep">L0 看见 ──┬──> L1 命名 ──┬──> L2 结构 ──┐
+             │                │              │
+             │                └──────────────┴──> L3 转译 ──> L4 工具
+             │                                        │
+             └────────────────────────────────────────┴──> L5 闭环（贯穿全程）
+
+读法：
+  · L3 必须同时具备 L1 和 L2。只有 L1（会形容）→ 描述散乱；
+    只有 L2（会规格）→ 描述僵硬。两者都有，才能写出"既有骨架又有呼吸"的描述。
+  · L4 工具可以随时补，放在最后是因为：工具会变，前三层不会。
+  · L5 不在链条末端，它从第一天就开始跑——没有反馈闭环，前四层都长不快。</div>
+  <div class="note" style="margin-top:16px">
+    <b>最常见的错误路径：</b>直接从 L4 开始（学工具）→ 卡在 L3（写不出描述）→ 退回去以为要学"提示词技巧" → 其实缺的是 L1/L2。
+    如果你已经卡在"写不出准确描述"，先回 L1 补命名，不要继续找提示词模板。
+  </div>
+</section>
+
+<div class="foot">
+  姊妹篇：<a href="/photography/">摄影技能树</a>（怎么拍好）。本页解决另一半问题——<b>怎么把看到的好，说成 AI 能执行的话</b>。<br>
+  本页自身即一次示范：全站只用 1 个强调色、6 档字号、4 的倍数间距、无投影——这四条就是 L2 的规格意识。
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   技能树数据
+   每个节点格式：[编号, 名称, 是什么, 怎么练, 对应书]
+   加层的原则：一层只解决一个认知台阶，节点数控制在 5–14 个，
+   超过 14 个说明这一层没有拆干净。
+------------------------------------------------------------------ */
+const DATA = [
+  { code:"L0", name:"看见", goal:"把「好看」拆成可指认的要素——这一层是动作技能，只能练不能读",
+    gate:"任意一张好图，1 分钟内说出：光从哪来、视线先落在哪、最亮/最暗在哪、用了什么版式结构",
+    nodes:[
+      ["V1","三问拆图","光从哪来 / 视线先被谁抓走 / 最亮最暗在哪。任何图先过这三问再谈感受","每天 1 张，只写事实不写形容词：写「光从左前方窗、较柔」而不是「光线很美」",""],
+      ["V2","明暗结构","亮部/中间调/暗部的占比决定调性。高调轻、低调沉、中间调最安全也最平庸","把图转灰度，目测三档各占几成；再找 5 张同样占比的图对比",""],
+      ["V3","视觉动线","眼睛的落点顺序由「对比度」决定（明暗/色彩/大小/锐度），不由你想让人看哪决定","用手遮住图的不同区域，看注意力是否改变；找出真正抓眼的那块",""],
+      ["V4","减法","好图通常是删干净，不是加上去。最大的干扰项往往是背景里的高光或鲜艳色","每次拍/做完，问一句：画面里最抢眼的东西是不是主体？不是就删",""],
+      ["V5","参考库管理","按「可复用结构」归档，不按「好看」归档。按好看归档的库，等于没有库","建三个文件夹：光位 / 构图 / 色彩。每存一张必须写一句它属于哪类",""],
+      ["V6","临摹","照着好图做一张，逐项对比差在哪。这是最快的进步方式，比看教程快十倍","每周 1 张，对比时列出 3 个具体差异（不是「感觉不对」）","《Grid Systems》"],
+    ]},
+
+  { code:"L1", name:"命名", goal:"把感觉换成词——没有词就没有可执行的指令",
+    gate:"看一张图，能用 10 个以上的专业词描述它的光、色、版式，且每个词都能指到图上某处",
+    nodes:[
+      ["N1","HSL 三属性","色相（什么颜色）/ 明度（多亮）/ 饱和度（多艳）。调色时先动明度再动饱和","拿一张图只调明度，看情绪变化；再只调饱和，对比哪个影响更大",""],
+      ["N2","冷暖与色温","冷暖是相对关系不是绝对值。色温是对立轴：蓝 ↔ 橙，白平衡是表达不是「正确」","同一张图把白平衡推到两端，各写一句感受。你会发现「正确」往往最无聊",""],
+      ["N3","色彩关系","单色 / 类似 / 互补 / 三角。互补最容易出设计感，也最容易俗——取决于面积比","分析 10 张好图用的是哪种关系，并估算主色与辅色的面积比","《Color and Light》"],
+      ["N4","色彩与情绪","低饱和 + 高明度 = 轻、柔、通透；低明度 + 高饱和 = 重、压、紧张","给同一场景做 3 个色彩方案，各配一句它适合传达什么","《Interaction of Color》"],
+      ["N5","光位","顺光平但清楚、侧光立体、逆光有氛围、顶光显丑、底光显恐怖。五种各练一遍","同一个人/物，五个光位各拍一张，并排看差异","《Light: Science and Magic》"],
+      ["N6","光质","硬光（光源相对小）阴影锐、对比高；柔光（光源相对大）过渡缓。关键变量是光源相对面积","用台灯加不同大小的柔光材料，拍同一物体，记录阴影边缘锐度变化","《Light: Science and Magic》"],
+      ["N7","光比与层次","主光与辅光的比值决定立体感：1:1 平、1:4 稳、1:8 戏剧。没有暗部就没有立体","拍一组 1:1 / 1:2 / 1:4 / 1:8，看哪一档开始「脏」",""],
+      ["N8","影调分区","Zone System 把亮度分 11 区（0 纯黑 → 10 纯白）。知道主体落在第几区，就能预判修图难度","把一张照片手动分 5 档灰度，标出主体在第几区","《The Negative》"],
+      ["N9","字体分类","衬线 / 无衬线 / 等宽 / 手写。中文另有宋楷黑仿。全篇最多两族：一族标题一族正文","收集 20 个界面/海报，标出各用了几族字体（多数只用一两族）","《Thinking with Type》"],
+      ["N10","字阶与字距","字号要按比例跳（1.25 / 1.5 倍），不要 13→14→15。大字负字距、小字正字距；中文行高 1.6–1.8","量一份真实 PPT 的字号，看是不是成比例；不是就重排一版对比",""],
+      ["N11","版式四原则","亲密性（相关的放一起）/ 对齐（有隐形的线）/ 重复（同角色同样式）/ 对比（不同就要明显不同）","找一份排版乱的材料，只改这四点，不改内容，看提升多少","《写给大家看的设计书》"],
+      ["N12","网格与留白","先定版心宽度和列数，再放内容。留白是层级工具，不是「用剩下的空间」","把一页内容重排到 12 栏网格上，对比随意摆放的效果","《Grid Systems》"],
+      ["N13","材质与层次","投影 / 描边 / 透明度三条路。经验：深色背景用透明度分层，浅色背景用投影","同一个卡片做三个版本（投影版、描边版、透明版），各说适用场景",""],
+      ["N14","动效词汇","缓动（线性/ease/ease-out）、时长、错峰延迟、位移量、透明度过渡。能命名才能指挥","拆 3 个网站的入场动画，写出各自的时长/缓动/位移/延迟",""],
+    ]},
+
+  { code:"L2", name:"结构", goal:"从「会形容」到「会写规格」——这是设计系统与随手排版的分界线",
+    gate:"拿到任意一份好设计，能在 20 分钟内写出它的令牌表（颜色、字号、间距、圆角），并照着复刻出近似效果",
+    nodes:[
+      ["S1","设计令牌","把颜色/字号/间距/圆角提成变量（token），改一处全变。这是「系统」和「手排」的本质区别","拆一个网站或 PPT，列出全部颜色和字号，看它们是不是收敛在少数几个值上",""],
+      ["S2","栅格与容器","版心宽度 + 列数 + 间距三件套。有了它，所有元素的位置就是算出来的，不是摆出来的","量一份 PPT 的左右边距，看内容是否都对齐到同一条线",""],
+      ["S3","信息层级","一屏只能有一个第一焦点。主次靠对比度拉开，不是靠把所有东西都放大加粗","把一页里所有「加粗突出」的项列出来，超过 3 个就说明没有层级",""],
+      ["S4","比例与节奏","间距用固定刻度（4/8/12/16/24/32/48），不要 7px、13px 这种随手值。节奏来自「小间距密集、大间距分隔」","量一份材料的全部间距，统计有几个不同的值；超过 6 个就失控了",""],
+      ["S5","一致性检查表","同角色是否同字号？同层级是否同圆角？强调色是否每页只出现一次？边缘是否有没对齐的 1px？","做完任何东西后过一遍这四条，多数「不好看」能在这一步修掉",""],
+      ["S6","从参考到规格","看到好设计，能反向写出它的令牌表。这是把「欣赏」转成「可复用」的唯一动作","每拆一个案例出一张表，攒够 5 张后你会发现优秀作品的高度趋同",""],
+    ]},
+
+  { code:"L3", name:"转译", goal:"把设计规格翻译成 AI 能执行的描述——本树的核心技能",
+    gate:"写一段 100 字描述，让别人（或模型）照着做，结果与原意的接近度 ≥ 70%",
+    nodes:[
+      ["T1","四段式结构","主体 / 风格与媒介 / 光线与色彩 / 技术参数。四段缺任何一段，模型就用默认值填，结果不可控","用固定四段模板写 10 条提示词，每条明确标出哪段对应哪个要素",""],
+      ["T2","具象 > 抽象","「近黑 #0a0a0a 底、单一电光蓝点缀」远胜「高级感」。颜色值、材质名、光源类型、焦距都是具象锚点","把 10 个抽象词（高级/舒服/有质感…）各换成 3 个具象描述，做成对照卡",""],
+      ["T3","光线描述","时间（黄金时刻/蓝调/正午/阴天）+ 方向（顺/侧/逆/顶）+ 性质（硬/柔）+ 光比（1:4）","同一主体写 5 条不同的光线描述，生成后对比差异是否真的对应","《Light: Science and Magic》"],
+      ["T4","镜头语言","焦距决定透视（24mm 夸张、85mm 压缩、200mm 扁平）；光圈决定景深；机位决定权力关系（低角度压迫/高角度削弱）","同一描述只改焦距参数，看画面透视变化是否符合预期",""],
+      ["T5","色彩描述","用色彩关系（互补/类似/单色）+ 明度调性（高调/低调）+ 饱和度（低饱和高级感/高饱和强刺激）三点锁定","写 3 条只差色彩关系的描述，验证模型是否真的响应","《Color and Light》"],
+      ["T6","版式描述","栅格（几栏）、对齐方式（左对齐/居中/两端）、留白比例、层级数量、字体族气质（几何/人文/等宽）","用同一段文案写 3 条不同的版式描述，生成后看结构差异",""],
+      ["T7","负面提示词","显式排除不想要的东西：不要纯黑、不要多种彩色、不要投影、不要渐变文字、不要插画风。这一步能显著提升命中率","每次生成后，把出现的「不想要」记下来，沉淀成自己的负面词表",""],
+      ["T8","参考图与权重","image prompt / style reference / ControlNet。权重不是越高越好——太高会照抄构图，失去可编辑性","同一参考图用 0.3 / 0.5 / 0.8 三档权重各生成一次，找到「像但不僵」的点",""],
+      ["T9","单变量迭代","一次只改一个变量，否则无法归因。这是「调出来的」和「蒙出来的」的分界线","固定 seed 和其余描述，只改光线那一段，记录结果变化",""],
+      ["T10","一致性保持","角色/风格跨图一致：固定 seed + 固定描述模板 + 参考图锁定三者叠加","做一组 3 张风格一致的作品，记录哪些参数必须锁死",""],
+    ]},
+
+  { code:"L4", name:"工具", goal:"工具随时可补，放最后——因为它会变，前三层不会",
+    gate:"能用一条完整链路（采集 → 修 → 排版 → 输出）独立交付一个作品，中途不需要换工具",
+    nodes:[
+      ["U1","图像生成工具","Midjourney 审美强控制弱；Flux / SD 控制强需调参；GPT-image 语义强风格弱；国产模型中文场景理解更好","同一描述在 2 个工具各跑一次，记录各自强项和短板，选一个作为主力",""],
+      ["U2","后期工具","Lightroom 批量与 RAW；Capture One 色彩与商业；Photoshop 局部与合成；DaVinci 调色与视频","按「批量用 LR、精修用 PS」建立固定分工，不要每次都纠结用哪个",""],
+      ["U3","版式工具","Figma 版式与协作；Keynote 演示质感；PowerPoint 兼容性与动画；Canva 速度","同一份内容在 Figma 和 PPT 各做一版，感受两种工具的表达上限差异",""],
+      ["U4","代码化设计","HTML/CSS 能精确控制到 px 和缓动曲线。做网页、长图、可交互原型必须会，纯拖拽工具会卡住","把一个设计稿用 HTML/CSS 还原，重点练间距和字阶的精确复现",""],
+      ["U5","API 与批处理","脚本批量生成、批量改图、批量导出。手工做 10 次的事，脚本做 1000 次","把一次重复操作写成脚本（哪怕 20 行），体会效率差",""],
+    ]},
+
+  { code:"L5", name:"闭环", goal:"不在链条末端，从第一天就要跑——没有反馈闭环，前四层都长不快",
+    gate:"连续 30 天完成每日一拆 + 一次生成对比，且能说清自己最常犯的 3 个判断错误",
+    nodes:[
+      ["R1","每日一拆","看到好图 → 写 100 字结构化四段描述 → 不看原图凭描述生成 → 对比差异 → 归因","每天 30 分钟，重点在「归因」，不在生成得好看",""],
+      ["R2","反向练习","给定描述词复原图；或给图写词让别人复原。检验描述是否信息完整——别人复原不出来，就是你没写清","和朋友互做一次：你写词他复原，他写词你复原",""],
+      ["R3","盲测","两张图让人选，记录理由。验证自己的判断是否被「完成度」骗——高完成度不等于好设计","每次做完两版，让人盲选，看自己的选择和大众的一致度",""],
+      ["R4","词汇卡","每个词配一张自己的图作例证。没有例证的词等于没学会，只是背下来了","建 50 张卡：正面词 + 背面自己拍的例证。这是最不容易过时的资产",""],
+      ["R5","作品复盘","每次交付后写四行：目标是什么 / 用了什么手段 / 结果差在哪 / 下次改什么","固定模板，四行以内。写不出来说明这次是凭感觉做的",""],
+    ]},
+];
+
+/* ---------- 状态管理：0 未开始 / 1 学习中 / 2 已掌握 ---------- */
+const KEY = "designPromptSkillTree.v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e) { state = {}; }
+const total = DATA.reduce((n, l) => n + l.nodes.length, 0);
+
+/* 渲染整棵树 */
+function render(){
+  const tree = document.getElementById("tree");
+  tree.innerHTML = DATA.map(layer => `
+    <div class="layer">
+      <div class="lhead">
+        <span class="lcode">${layer.code}</span>
+        <span class="lname">${layer.name}</span>
+        <span class="lgoal">${layer.goal}</span>
+      </div>
+      <div class="gate"><b>出关标准：</b>${layer.gate}</div>
+      <div class="nodes">
+        ${layer.nodes.map(([id, title, desc, drill, book]) => `
+          <div class="node" data-id="${id}" title="点击切换状态">
+            <span class="id">${id}</span>
+            <span class="t">${title}</span>
+            <div class="d">${desc}</div>
+            ${drill ? `<div class="drill"><em>练</em> ${drill}</div>` : ""}
+            ${book ? `<div class="bk">📖 ${book}</div>` : ""}
+            <div class="st">未开始</div>
+          </div>`).join("")}
+      </div>
+    </div>`).join("");
+  refresh();
+}
+
+/* 刷新所有卡片的状态样式与统计 */
+function refresh(){
+  document.querySelectorAll(".node").forEach(el => {
+    const s = state[el.dataset.id] || 0;
+    el.classList.remove("s1", "s2");
+    if (s === 1) el.classList.add("s1");
+    if (s === 2) el.classList.add("s2");
+    el.querySelector(".st").textContent = ["未开始", "学习中", "已掌握"][s];
+  });
+  const c1 = Object.values(state).filter(v => v === 1).length;
+  const c2 = Object.values(state).filter(v => v === 2).length;
+  document.getElementById("c1").textContent = c1;
+  document.getElementById("c2").textContent = c2;
+  document.getElementById("ct").textContent = total;
+  document.getElementById("pbar").style.width = (c2 / total * 100) + "%";
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+/* 点击切换：0 -> 1 -> 2 -> 0 */
+document.getElementById("tree").addEventListener("click", e => {
+  const card = e.target.closest(".node");
+  if (!card) return;
+  const id = card.dataset.id;
+  state[id] = ((state[id] || 0) + 1) % 3;
+  refresh();
+});
+
+/* 搜索：按节点全文过滤，命中的显示、未命中的隐藏 */
+document.getElementById("q").addEventListener("input", e => {
+  const kw = e.target.value.trim().toLowerCase();
+  document.querySelectorAll(".node").forEach(el => {
+    el.classList.toggle("hide", kw && !el.textContent.toLowerCase().includes(kw));
+  });
+});
+
+/* 复制盘点结果，便于贴回对话里让 AI 重排路径 */
+document.getElementById("dumpbtn").addEventListener("click", () => {
+  const lines = ["设计提示词技能树 · 盘点结果", ""];
+  DATA.forEach(layer => {
+    lines.push(`【${layer.code} ${layer.name}】`);
+    layer.nodes.forEach(([id, title]) => {
+      const s = state[id] || 0;
+      lines.push(`  ${id} ${title} — ${["未开始", "学习中", "已掌握"][s]}`);
+    });
+    lines.push("");
+  });
+  const txt = lines.join("\n");
+  const box = document.getElementById("dump");
+  box.style.display = "block";
+  box.textContent = txt;
+  navigator.clipboard?.writeText(txt).catch(() => {});
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  if (!confirm("确定清空全部进度？此操作不可恢复。")) return;
+  state = {};
+  refresh();
+});
+
+render();
+</script>
+
+<div style="position:fixed;left:16px;bottom:16px;z-index:20">
+  <a href="/" style="display:inline-block;padding:8px 14px;border-radius:10px;background:rgba(30,34,43,.94);border:1px solid #2b313d;color:#8b95a7;text-decoration:none;font-size:13px">← 蓝海小站</a>
+</div>
+</body>
+</html>
