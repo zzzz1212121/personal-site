@@ -10,8 +10,8 @@ disableKinds = ["taxonomy", "term"]
 [params]
   brand = "蓝海小站"
   brandEn = "Blue Ocean"
-  tagline = "拍点照片，写点东西。"
-  description = "蓝海小站（Blue Ocean）—— 个人存档：照片、影像、技术笔记。"
+  tagline = "欢迎"
+  description = "蓝海小站（Blue Ocean）—— 苍径秋高，对月枕松根，一觉天明。"
   footer = "用 Hugo 生成 · 托管在 GitHub Pages"
 
 [markup]
