@@ -28,15 +28,13 @@ hugo.toml                 站点配置（baseURL / 站名 / 参数）
 content/posts/            文章（Markdown）
 content/about.md          关于页
 layouts/                  模板：baseof / index / list / single / robots.txt
-layouts/partials/gate.html 进站欢迎界面「叫哥才给进」（自动注入所有页面）
 assets/css/style.css      样式（Hugo Pipes：resources.Get "css/style.css" | minify | fingerprint；⚠ 不是 static/css/）
 static/CNAME              自定义域名（Hugo 原样拷到 public/）
-static/heatmap/index.html 每日板块热力图（自动写入，勿手改）
 static/photography/index.html 摄影技能树（来源 learning/摄影技能树.html 的副本）
 static/design-prompt/index.html 设计提示词技能树（来源 learning/设计提示词技能树.html 的副本）
 static/economics/index.html  宏观经济学知识树（来源 learning/宏观经济学知识树.html 的副本）
 deploy.sh                 构建 + 强制推送 gh-pages
-publish_heatmap.sh        热力图同步 + 发布 + 线上校验（launchd 调）
+publish_heatmap.sh        已停用（原热力图发布脚本，现直接 exit 0）
 logs/publish.log          发布日志
 ```
 
@@ -49,23 +47,18 @@ hugo server -D                # 本地预览 http://localhost:1313
 bash deploy.sh                # 发布（构建 + 推送 gh-pages）
 ```
 
-## 热力图自动发布
+## 已下线：板块策略热力图（2026-11-24）
 
-launchd 任务 `com.user.site-heatmap`，工作日 **15:45**（在 15:35 仪表盘生成之后）：
+原「板块策略仪表盘」已按用户要求从站点删除：
 
-```
-sector-dashboard/output/strategy_heatmap.html
-  → 复制到 static/heatmap/index.html（只接受当天生成的文件，否则报错告警）
-  → hugo + 强制推送 gh-pages
-  → 60 秒后取前 64KB 校验线上是否含当天日期
-  → 任一步失败 → 飞书告警
-```
+- 首页「工具」区入口已移除
+- `static/heatmap/index.html` 已删除（`/heatmap/` 现为 404）
+- `robots.txt` 里的 `Disallow: /heatmap/` 已去掉
+- `publish_heatmap.sh` 开头加了 `exit 0` 停用；**Mac 上若还挂着 launchd 任务 `com.user.site-heatmap`，
+  需要在那台机器上 `launchctl unload ~/Library/LaunchAgents/com.user.site-heatmap.plist`**，
+  否则它仍会每天跑（脚本现已直接退出，不会再发布，但会留下执行记录）
 
-页面入口：首页「工具」区 → `/heatmap/`。`robots.txt` 已 `Disallow: /heatmap/`，不让搜索引擎收录。
-
-**已知代价**：
-- 热力图 **3.7MB**（gzip 后约 1.2MB），国内线路拉全量要 1~2 分钟，打开偏慢。
-- 每天一份新文件进 git，仓库会慢慢变大（一年约 100~150MB，Pages 上限 1GB）。
+如需恢复：`git revert` 本次提交，并从 git 历史取回 `static/heatmap/index.html` 与 `layouts/index.html` 里的入口。
 
 ## 环境注意
 
@@ -73,20 +66,12 @@ sector-dashboard/output/strategy_heatmap.html
 - brew 安装必须带 `HOMEBREW_NO_AUTO_UPDATE=1`，否则卡在 auto-update。
 - 写得快的命令：`dig +short ztsblueocean.cn` 验解析；`openssl s_client -connect ztsblueocean.cn:443 -servername ztsblueocean.cn | openssl x509 -noout -subject` 验证书。
 
-## 进站欢迎界面（2026-11-04 加）
+## 已下线：进站口令（2026-11-24）
 
-首次访问（或新开标签页）会先看到一屏欢迎界面，**必须喊一声「哥」才放行**。
+原「叫哥才给进」欢迎界面已按用户要求删除：
 
-| 项 | 说明 |
-|---|---|
-| 位置 | `layouts/partials/gate.html`，由 `baseof.html` 注入所有页面 |
-| 通过规则 | 输入内容**包含「哥」**即通过（哥 / 大哥 / 老哥 / 哥好 都行） |
-| 记忆范围 | `sessionStorage` —— **同一次会话内不再弹**，关掉浏览器再开又会拦一次 |
-| 错误反馈 | 输入框抖动 + 随机吐槽（"再来一次，好好叫。"等） |
-| 无 JS | `<noscript>` 兜底自动隐藏，不挡真实用户与搜索引擎 |
-| 覆盖范围 | 只拦 Hugo 生成的页面；`/heatmap/` 是 static 裸页，**不在拦截范围** |
+- `layouts/_default/baseof.html` 里的 `{{ partial "gate.html" . }}` 注入已移除
+- `layouts/partials/gate.html` 已删除
+- `assets/css/style.css` 末尾「进站口令」样式段已删除
 
-样式在 `assets/css/style.css` 末尾「进站口令」段，沿用站点 CSS 变量（支持深色模式）。
-
-**想改口令**：编辑 `gate.html` 里的 `var OK = ['哥'];`（数组里任一子串命中即通过）。
-**想临时关掉**：删掉 `baseof.html` 里那行 `{{ partial "gate.html" . }}` 再发布。
+现在所有页面直接可访问，不再有欢迎屏。

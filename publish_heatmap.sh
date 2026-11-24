@@ -1,6 +1,12 @@
 #!/bin/bash
 # 把每日板块热力图同步到个人网站并发布
 # 由 launchd 任务 com.user.site-heatmap 在工作日 15:45 调起；也可手动跑
+#
+# ⚠️ 2026-11-24 已停用：用户要求从个人主页下线「板块策略仪表盘」，
+#    该栏目、页面与首页入口均已删除。本脚本保留但不再执行任何操作。
+#    如需恢复：从 git 历史恢复 static/heatmap/ 与 layouts/index.html 里的入口，
+#    并删掉下面这段 exit。
+exit 0
 set -uo pipefail
 
 SITE="/Users/zzz/dsh-workspace/projects/personal-site"
